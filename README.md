@@ -31,4 +31,16 @@ Universalis data is crowdsourced and can be stale. AutoMarket never buys above t
 
 ## Installation
 
-TBD
+1. Open the Dalamud Settings menu using the button at the bottom of the Plugin Installer, or type `/xlsettings` in chat.
+2. Open the **Experimental** tab.
+3. Under **Custom Plugin Repositories**, paste this URL into the empty box at the bottom:
+
+   ```text
+   https://raw.githubusercontent.com/k1miyama/auto-market/master/pluginmaster.json
+   ```
+
+4. Click the **+** button.
+5. Click **Save and Close**.
+6. Open the Plugin Installer, search for **AutoMarket**, and install it.
+
+AutoMarket requires [Lifestream](https://github.com/NightmareXIV/Lifestream) to be installed and enabled.
