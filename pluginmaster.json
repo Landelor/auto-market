@@ -1,0 +1,18 @@
+[
+  {
+    "Author": "Aki",
+    "Name": "AutoMarket",
+    "InternalName": "AutoMarket",
+    "AssemblyVersion": "0.4.0.4",
+    "DalamudApiLevel": 15,
+    "ApplicableVersion": "any",
+    "Punchline": "Plan a shopping list, travel efficiently, and buy live market listings.",
+    "Description": "Compare Universalis listings, plan quantities and budgets, then use Lifestream to travel and purchase verified live listings.",
+    "RepoUrl": "https://github.com/k1miyama/auto-market",
+    "IconUrl": "https://raw.githubusercontent.com/k1miyama/auto-market/master/images/icon.png",
+    "IsHide": false,
+    "IsTestingExclusive": false,
+    "DownloadLinkInstall": "https://github.com/k1miyama/auto-market/releases/download/0.4.0.4/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/k1miyama/auto-market/releases/download/0.4.0.4/latest.zip"
+  }
+]
