@@ -1,0 +1,15 @@
+{
+  "Author": "Aki",
+  "Name": "AutoMarket",
+  "InternalName": "AutoMarket",
+  "RepoUrl": "https://github.com/y1chu/auto-market",
+  "IconUrl": "https://raw.githubusercontent.com/y1chu/auto-market/master/images/icon.png",
+  "Punchline": "Plan a shopping cart, travel efficiently, and buy live market listings.",
+  "Description": "Compare Universalis listings across your data center or region, plan target quantities and budgets, group a multi-item cart by world, and use Lifestream to travel and buy safe live fallbacks. Includes gil/inventory checks, progress, and persistent purchase history. Commands: /automarket, /am. Requires Lifestream.",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "market board",
+    "universalis",
+    "travel"
+  ]
+}
