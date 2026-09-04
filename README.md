@@ -1,4 +1,4 @@
-# AutoMarket
+# AutoMarket (WIP)
 
 AutoMarket is a Dalamud plugin that lists current Universalis offers for an item across your data center or entire region, then asks Lifestream to take you to the chosen world's market board and purchase that listing.
 
