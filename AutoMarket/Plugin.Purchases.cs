@@ -118,8 +118,17 @@ public sealed partial class Plugin
             var currentWorld = CurrentLocation?.World;
             var marketAddon = (AddonItemSearch*)GameGui.GetAddonByName("ItemSearch").Address;
             var marketOpen = marketAddon != null && marketAddon->AtkUnitBase.IsVisible;
-            if (!string.Equals(currentWorld, request.Quote.World, StringComparison.OrdinalIgnoreCase) || !marketOpen)
+            var sameWorld = string.Equals(currentWorld, request.Quote.World, StringComparison.OrdinalIgnoreCase);
+            if (!sameWorld || !marketOpen)
             {
+                // Lifestream cannot move the player while the market board window is open
+                // (left over from the previous world's purchase), so close it before travel.
+                var resultAddon = (AtkUnitBase*)GameGui.GetAddonByName("ItemSearchResult").Address;
+                if (resultAddon != null && resultAddon->IsVisible)
+                    resultAddon->Close(true);
+                if (marketOpen)
+                    marketAddon->AtkUnitBase.Close(true);
+
                 var error = TravelToMarketBoard(request.Quote.World);
                 if (error is not null)
                 {
