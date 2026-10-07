@@ -54,6 +54,7 @@ public sealed partial class Plugin
     internal string PurchaseStatus { get; private set; } = string.Empty;
     internal string ProgressStage { get; private set; } = "Idle";
     internal int QueueCompleted { get; private set; }
+    internal int QueueSkipped { get; private set; }
     internal int QueueTotal { get; private set; }
     internal IReadOnlyList<PurchaseHistoryEntry> PurchaseHistory => purchaseHistory;
 
@@ -66,6 +67,7 @@ public sealed partial class Plugin
         cartProgress.Clear();
         purchaseQueue.Enqueue(new PurchaseRequest(0, itemId, itemName, quote, false, default));
         QueueCompleted = 0;
+        QueueSkipped = 0;
         QueueTotal = 1;
         return BeginNextPurchase();
     }
@@ -91,6 +93,7 @@ public sealed partial class Plugin
             purchaseQueue.Enqueue(request);
 
         QueueCompleted = 0;
+        QueueSkipped = 0;
         QueueTotal = route.Count;
         return BeginNextPurchase();
     }
@@ -154,7 +157,9 @@ public sealed partial class Plugin
         pendingPurchase = null;
         cartProgress.Clear();
         ProgressStage = "Completed";
-        PurchaseStatus = $"[Completed] Purchase route finished: {QueueCompleted:N0}/{QueueTotal:N0} planned stacks processed.";
+        PurchaseStatus = QueueSkipped > 0
+            ? $"[Completed] Purchase route finished: {QueueCompleted:N0}/{QueueTotal:N0} planned stacks processed ({QueueSkipped:N0} skipped, no safe live listing)."
+            : $"[Completed] Purchase route finished: {QueueCompleted:N0}/{QueueTotal:N0} planned stacks processed.";
         return null;
     }
 
@@ -185,6 +190,24 @@ public sealed partial class Plugin
         ProgressStage = "Stopped";
         PurchaseStatus = message;
         Log.Warning("Purchase stopped: {Message}", message);
+    }
+
+    /// <summary>
+    /// Drops the current item from the route (no safe live listing, item not found, etc.) without
+    /// touching gil, inventory, or the rest of the queue, then advances to the next queued item.
+    /// Unlike <see cref="FailPurchase"/>, this is for failures that are specific to this one listing.
+    /// </summary>
+    private unsafe void SkipCurrentPurchase(string reason)
+    {
+        var itemName = pendingPurchase?.ItemName ?? "the item";
+        pendingPurchase = null;
+        ResetPurchaseState();
+        QueueSkipped++;
+        QueueCompleted++;
+        ProgressStage = "Skipped";
+        PurchaseStatus = $"[Skipped] {itemName}: {reason}";
+        Log.Warning("Purchase skipped: {Item} - {Message}", itemName, reason);
+        BeginNextPurchase();
     }
 
     private unsafe void CompletePurchase(DateTimeOffset now)

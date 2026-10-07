@@ -4,7 +4,7 @@
   "InternalName": "AutoMarket",
   "RepoUrl": "https://github.com/Landelor/auto-market",
   "IconUrl": "https://raw.githubusercontent.com/Landelor/auto-market/master/images/icon.png",
-  "LastUpdate": "1791343383",
+  "LastUpdate": "1791366798",
   "Punchline": "Plan a shopping cart, travel efficiently, and buy live market listings.",
   "Description": "Compare Universalis listings across your data center or region, plan target quantities and budgets, group a multi-item cart by world, and use Lifestream to travel and buy safe live fallbacks. Includes gil/inventory checks, progress, and persistent purchase history. Commands: /automarket, /am. Requires Lifestream.",
   "ApplicableVersion": "any",

@@ -3,9 +3,9 @@
     "Author": "Aki",
     "Name": "AutoMarket",
     "InternalName": "AutoMarket",
-    "AssemblyVersion": "0.4.0.5",
+    "AssemblyVersion": "0.4.0.6",
     "DalamudApiLevel": 15,
-    "LastUpdate": "1791343383",
+    "LastUpdate": "1791366798",
     "ApplicableVersion": "any",
     "Punchline": "Plan a shopping list, travel efficiently, and buy live market listings.",
     "Description": "Compare Universalis listings, plan quantities and budgets, then use Lifestream to travel and purchase verified live listings.",
@@ -13,7 +13,7 @@
     "IconUrl": "https://raw.githubusercontent.com/Landelor/auto-market/master/images/icon.png",
     "IsHide": false,
     "IsTestingExclusive": false,
-    "DownloadLinkInstall": "https://github.com/Landelor/auto-market/releases/download/0.4.0.5/latest.zip",
-    "DownloadLinkUpdate": "https://github.com/Landelor/auto-market/releases/download/0.4.0.5/latest.zip"
+    "DownloadLinkInstall": "https://github.com/Landelor/auto-market/releases/download/0.4.0.6/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/Landelor/auto-market/releases/download/0.4.0.6/latest.zip"
   }
 ]

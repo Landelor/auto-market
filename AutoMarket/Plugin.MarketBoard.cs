@@ -120,7 +120,7 @@ public sealed partial class Plugin
             return false;
         }
 
-        FailPurchase("The item did not appear in the live market search. Nothing was purchased.");
+        SkipCurrentPurchase("the item did not appear in the live market search.");
         return false;
     }
 
@@ -157,7 +157,7 @@ public sealed partial class Plugin
             if (now - liveListingMatchedAt < TimeSpan.FromSeconds(5))
                 return;
 
-            FailPurchase("No safe live listing matches this purchase plan. Nothing was purchased; search again.");
+            SkipCurrentPurchase("no safe live listing matches this purchase plan.");
             return;
         }
 
@@ -165,7 +165,7 @@ public sealed partial class Plugin
         var totalCost = checked((long)selected.UnitPrice * selected.Quantity + selected.TotalTax);
         if (activeBudgetRemaining > 0 && totalCost > activeBudgetRemaining)
         {
-            FailPurchase($"The live stack costs {totalCost:N0} gil including tax, above the remaining {activeBudgetRemaining:N0} gil budget.");
+            SkipCurrentPurchase($"the live stack costs {totalCost:N0} gil including tax, above the remaining {activeBudgetRemaining:N0} gil budget.");
             return;
         }
 
@@ -214,7 +214,7 @@ public sealed partial class Plugin
             var resultIndex = FindSearchResultIndex(addon, request.ItemId);
             if (resultIndex < 0)
             {
-                FailPurchase("The market result disappeared before listings could be refreshed. Nothing was purchased.");
+                SkipCurrentPurchase("the market result disappeared before listings could be refreshed.");
                 return;
             }
 
@@ -245,9 +245,9 @@ public sealed partial class Plugin
             return;
         }
 
-        FailPurchase(liveOfferingsReceived
-            ? "No safe live listing matches this purchase plan. Nothing was purchased; search again."
-            : "The market board did not return live listings. Nothing was purchased.");
+        SkipCurrentPurchase(liveOfferingsReceived
+            ? "no safe live listing matches this purchase plan."
+            : "the market board did not return live listings.");
     }
 
     private void OnOfferingsReceived(IMarketBoardCurrentOfferings offerings)
