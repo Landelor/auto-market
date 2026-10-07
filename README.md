@@ -36,7 +36,7 @@ Universalis data is crowdsourced and can be stale. AutoMarket never buys above t
 3. Under **Custom Plugin Repositories**, paste this URL into the empty box at the bottom:
 
    ```text
-   https://raw.githubusercontent.com/k1miyama/auto-market/master/pluginmaster.json
+   https://raw.githubusercontent.com/Landelor/auto-market/master/pluginmaster.json
    ```
 
 4. Click the **+** button.
