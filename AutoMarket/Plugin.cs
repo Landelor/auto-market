@@ -75,8 +75,6 @@ public sealed partial class Plugin : IDalamudPlugin
         }
     }
 
-    internal string? CurrentDataCenter => CurrentLocation?.DataCenter;
-
     internal string? CurrentRegion => CurrentLocation?.RegionId switch
     {
         1u => "Japan",

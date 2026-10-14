@@ -11,25 +11,10 @@ public sealed partial class MainWindow
 {
     private void DrawSearchOptions()
     {
-        var dataCenter = plugin.CurrentDataCenter ?? "not logged in";
         var region = plugin.CurrentRegion;
-
-        ImGui.Text("Search scope");
-        if (ImGui.RadioButton($"Current DC ({dataCenter})", searchScope == SearchScope.DataCenter))
-        {
-            searchScope = SearchScope.DataCenter;
-            listings.Clear();
-        }
-
-        if (region is not null)
-        {
-            ImGui.SameLine();
-            if (ImGui.RadioButton($"Entire region ({region})", searchScope == SearchScope.Region))
-            {
-                searchScope = SearchScope.Region;
-                listings.Clear();
-            }
-        }
+        ImGui.Text(region is not null
+            ? $"Search scope: entire {region} region (DC travel is seamless as of patch 7.57)."
+            : "Search scope: entire region (log in to a supported region to search).");
 
         ImGui.Text("Quality");
         if (ImGui.RadioButton("Any##Quality", qualityFilter == QualityFilter.Any))
@@ -143,7 +128,7 @@ public sealed partial class MainWindow
 
     private void StartSearch(ItemChoice item)
     {
-        var scope = searchScope == SearchScope.Region ? plugin.CurrentRegion : plugin.CurrentDataCenter;
+        var scope = plugin.CurrentRegion;
         if (string.IsNullOrWhiteSpace(scope))
         {
             status = "Log in to a supported region before searching.";

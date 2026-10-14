@@ -1,6 +1,6 @@
 # AutoMarket (WIP)
 
-AutoMarket is a Dalamud plugin that lists current Universalis offers for an item across your data center or entire region, then asks Lifestream to take you to the chosen world's market board and purchase that listing.
+AutoMarket is a Dalamud plugin that lists current Universalis offers for an item across your entire region, then asks Lifestream to take you to the chosen world's market board and purchase that listing. Since patch 7.57 made data-center travel seamless, AutoMarket always searches region-wide instead of offering a separate "current DC" scope.
 
 ## Requirements
 
@@ -12,7 +12,7 @@ AutoMarket checks these dependencies when it loads.
 ## Use
 
 1. Run `/automarket` or `/am Item Name`.
-2. Choose **Current DC** or **Entire region** and optionally filter to **HQ only** or **NQ only**.
+2. Choose an item, optionally filter to **HQ only** or **NQ only**.
 3. Set a target quantity, maximum unit price, and optional total budget.
 4. Add one or more item plans to the cart, then start the grouped world route; or use **Travel + buy** for one stack.
 5. AutoMarket buys whole stacks, uses equal-or-cheaper live fallbacks with matching HQ/NQ quality, and stops when the target or budget is reached.

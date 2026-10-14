@@ -12,12 +12,6 @@ namespace AutoMarket.Windows;
 
 public sealed partial class MainWindow : Window, IDisposable
 {
-    private enum SearchScope
-    {
-        DataCenter,
-        Region,
-    }
-
     private enum QualityFilter
     {
         Any,
@@ -36,7 +30,6 @@ public sealed partial class MainWindow : Window, IDisposable
     private Task<List<MarketQuote>>? searchTask;
     private ItemChoice? selectedItem;
     private List<MarketQuote> listings = [];
-    private SearchScope searchScope;
     private QualityFilter qualityFilter;
     private uint? searchItemId;
     private string searchText = string.Empty;
