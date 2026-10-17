@@ -40,9 +40,6 @@ public sealed partial class Plugin : IDalamudPlugin
         mainWindow = new MainWindow(this);
         windowSystem.AddWindow(mainWindow);
 
-        if (!GetPluginState("Lifestream").Loaded)
-            mainWindow.Open(string.Empty);
-
         var command = new CommandInfo(OnCommand) { HelpMessage = "Open AutoMarket. Optionally pass an item name." };
         CommandManager.AddHandler(CommandName, command);
         CommandManager.AddHandler(ShortCommandName, command);
