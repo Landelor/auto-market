@@ -52,7 +52,7 @@ public sealed partial class MainWindow
         var remove = -1;
         ImGui.TextDisabled("Planned from Universalis; each listing is verified live before purchase.");
         var flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollX | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingFixedFit;
-        if (ImGui.BeginTable("##AutoMarketCart", 11, flags, new Vector2(0, 220)))
+        if (ImGui.BeginTable("##AutoMarketCart", 10, flags, new Vector2(0, 220)))
         {
             ImGui.TableSetupScrollFreeze(1, 1);
             ImGui.TableSetupColumn("Item");
@@ -62,7 +62,6 @@ public sealed partial class MainWindow
             ImGui.TableSetupColumn("Unit price");
             ImGui.TableSetupColumn("Stack total");
             ImGui.TableSetupColumn("World");
-            ImGui.TableSetupColumn("Data center");
             ImGui.TableSetupColumn("Retainer");
             ImGui.TableSetupColumn("Updated");
             ImGui.TableSetupColumn("Action");
@@ -88,8 +87,6 @@ public sealed partial class MainWindow
                     ImGui.Text($"{quote.Total:N0}");
                     ImGui.TableNextColumn();
                     ImGui.Text(quote.World);
-                    ImGui.TableNextColumn();
-                    ImGui.Text(GetDataCenter(quote.World));
                     ImGui.TableNextColumn();
                     ImGui.Text(quote.RetainerName);
                     ImGui.TableNextColumn();

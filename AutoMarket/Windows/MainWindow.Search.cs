@@ -44,7 +44,7 @@ public sealed partial class MainWindow
             | ImGuiTableFlags.ScrollY
             | ImGuiTableFlags.SizingFixedFit
             | ImGuiTableFlags.NoSavedSettings;
-        if (!ImGui.BeginTable("##AutoMarketListings", 8, flags, new Vector2(0, 250)))
+        if (!ImGui.BeginTable("##AutoMarketListings", 7, flags, new Vector2(0, 250)))
             return;
 
         ImGui.TableSetupScrollFreeze(0, 1);
@@ -53,7 +53,6 @@ public sealed partial class MainWindow
         ImGui.TableSetupColumn("Stack");
         ImGui.TableSetupColumn("Total");
         ImGui.TableSetupColumn("World");
-        ImGui.TableSetupColumn("Data center");
         ImGui.TableSetupColumn("Updated");
         ImGui.TableSetupColumn("Action");
         ImGui.TableHeadersRow();
@@ -72,8 +71,6 @@ public sealed partial class MainWindow
             ImGui.Text($"{listing.Total:N0}");
             ImGui.TableNextColumn();
             ImGui.Text(listing.World);
-            ImGui.TableNextColumn();
-            ImGui.Text(GetDataCenter(listing.World));
             ImGui.TableNextColumn();
             ImGui.Text(FormatAge(listing.LastReviewTime));
             ImGui.TableNextColumn();
