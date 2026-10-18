@@ -156,11 +156,15 @@ public sealed partial class MainWindow : Window, IDisposable
     private bool DrawDependencyStatus()
     {
         var lifestream = plugin.GetPluginState("Lifestream");
+        var allaganTools = plugin.GetPluginState("InventoryTools");
 
         ImGui.Text("Dependencies");
         DrawPluginStatus("Lifestream", lifestream, required: true);
         if (!lifestream.Loaded)
             ImGui.TextWrapped("Install or enable Lifestream, then return here. AutoMarket will detect it automatically.");
+        DrawPluginStatus("Allagan Tools", allaganTools, required: false);
+        if (!allaganTools.Loaded)
+            ImGui.TextWrapped("Optional: install or enable Allagan Tools so target quantities subtract what you already hold in your inventory and your retainers.");
         ImGui.Separator();
         return lifestream.Loaded;
     }

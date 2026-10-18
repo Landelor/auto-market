@@ -5,7 +5,8 @@ AutoMarket is a Dalamud plugin that lists current Universalis offers for an item
 ## Requirements
 
 - Dalamud API 15 / .NET 10
-- [Lifestream](https://github.com/NightmareXIV/Lifestream)
+- [Lifestream](https://github.com/NightmareXIV/Lifestream) (required)
+- [Allagan Tools](https://github.com/Critical-Impact/InventoryTools) (optional)
 
 AutoMarket checks these dependencies when it loads.
 
@@ -15,8 +16,9 @@ AutoMarket checks these dependencies when it loads.
 2. Choose an item, optionally filter to **HQ only** or **NQ only**.
 3. Set a target quantity, maximum unit price, and optional total budget.
 4. Add one or more item plans to the cart, then start the grouped world route; or use **Travel + buy** for one stack.
-5. AutoMarket buys whole stacks, uses equal-or-cheaper live fallbacks with matching HQ/NQ quality, and stops when the target or budget is reached.
-6. Every purchase checks live gil and free inventory space, shows progress, and is saved to purchase history after server confirmation.
+5. If Allagan Tools is installed and enabled, AutoMarket subtracts what you already hold in your own inventory/saddlebags and your retainers (including retainer market listings) from the target quantity before planning what to buy.
+6. AutoMarket buys whole stacks, uses equal-or-cheaper live fallbacks with matching HQ/NQ quality, and stops when the (remaining) target or budget is reached.
+7. Every purchase checks live gil and free inventory space, shows progress, and is saved to purchase history after server confirmation.
 
 Universalis data is crowdsourced and can be stale. AutoMarket never buys above the planned unit price or budget. Because market listings are sold as whole stacks, the final stack can exceed the requested target quantity.
 
@@ -43,4 +45,4 @@ Universalis data is crowdsourced and can be stale. AutoMarket never buys above t
 5. Click **Save and Close**.
 6. Open the Plugin Installer, search for **AutoMarket**, and install it.
 
-AutoMarket requires [Lifestream](https://github.com/NightmareXIV/Lifestream) to be installed and enabled.
+AutoMarket requires [Lifestream](https://github.com/NightmareXIV/Lifestream) to be installed and enabled. [Allagan Tools](https://github.com/Critical-Impact/InventoryTools) is optional; install and enable it to have target quantities account for what you already own.

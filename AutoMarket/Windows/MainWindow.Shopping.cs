@@ -10,15 +10,27 @@ public sealed partial class MainWindow
 {
     private void AddToCart(ItemChoice item, List<MarketQuote> visibleListings)
     {
-        var plan = PurchasePlanner.PlanQuotes(visibleListings, targetQuantity, maxUnitPrice, maxBudget);
-        if (plan.Count == 0)
+        var owned = plugin.GetOwnedQuantity(item.Id);
+        var remaining = (int)Math.Clamp((long)targetQuantity - owned, 0, int.MaxValue);
+        if (remaining <= 0)
         {
-            status = "No listings fit the quantity, unit-price, and budget limits.";
+            status = $"You already have {owned:N0}/{targetQuantity:N0} {item.Name} between your inventory and retainers; nothing to buy.";
             return;
         }
 
-        cart.Add(new CartOrder(nextCartId++, item.Id, item.Name, targetQuantity, maxBudget, plan));
-        status = $"Added {item.Name}: {plan.Sum(listing => listing.Quantity):N0}/{targetQuantity:N0} units, {plan.Sum(listing => listing.Total):N0} gil estimated.";
+        var plan = PurchasePlanner.PlanQuotes(visibleListings, remaining, maxUnitPrice, maxBudget);
+        if (plan.Count == 0)
+        {
+            status = owned > 0
+                ? $"No listings fit the remaining {remaining:N0} needed (you already have {owned:N0}) within the unit-price and budget limits."
+                : "No listings fit the quantity, unit-price, and budget limits.";
+            return;
+        }
+
+        cart.Add(new CartOrder(nextCartId++, item.Id, item.Name, remaining, maxBudget, plan));
+        status = owned > 0
+            ? $"Added {item.Name}: {plan.Sum(listing => listing.Quantity):N0}/{remaining:N0} units still needed (you already have {owned:N0}), {plan.Sum(listing => listing.Total):N0} gil estimated."
+            : $"Added {item.Name}: {plan.Sum(listing => listing.Quantity):N0}/{remaining:N0} units, {plan.Sum(listing => listing.Total):N0} gil estimated.";
     }
 
     private void AddListingToCart(ItemChoice item, MarketQuote listing)

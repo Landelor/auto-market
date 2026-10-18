@@ -26,8 +26,16 @@ public sealed partial class Plugin : IDalamudPlugin
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
 
     private readonly ICallGateSubscriber<string, object> lifestreamCommand;
+    private readonly ICallGateSubscriber<uint, bool, uint[], bool, uint> allaganToolsItemCount;
     private readonly WindowSystem windowSystem = new("AutoMarket");
     private readonly MainWindow mainWindow;
+
+    /// <summary>
+    /// AllaganTools' own InventoryCategory enum values for the player's bags/saddlebags and their
+    /// retainers (including anything sitting on a retainer's own market board). AutoMarket does not
+    /// reference AllaganTools' assembly, so these are the IPC's plain uint equivalents, not the enum.
+    /// </summary>
+    private static readonly uint[] OwnedQuantityCategories = [1, 2, 3, 4, 9];
 
     internal MarketClient MarketClient { get; }
 
@@ -37,6 +45,7 @@ public sealed partial class Plugin : IDalamudPlugin
         historyPath = Path.Combine(PluginInterface.GetPluginConfigDirectory(), "history.json");
         purchaseHistory = LoadHistory();
         lifestreamCommand = PluginInterface.GetIpcSubscriber<string, object>("Lifestream.ExecuteCommand");
+        allaganToolsItemCount = PluginInterface.GetIpcSubscriber<uint, bool, uint[], bool, uint>("AllaganTools.ItemCountOwnedByCategory");
         mainWindow = new MainWindow(this);
         windowSystem.AddWindow(mainWindow);
 
@@ -105,6 +114,28 @@ public sealed partial class Plugin : IDalamudPlugin
         {
             Log.Warning(ex, "Lifestream IPC call failed");
             return "Lifestream is not installed, loaded, or ready.";
+        }
+    }
+
+    /// <summary>
+    /// Returns how much of the item the active character already holds in their own bags/saddlebags
+    /// plus whatever their retainers hold (including stock sitting on a retainer's own market board).
+    /// Returns 0 (no reduction to the planned purchase) whenever Allagan Tools is not installed, not
+    /// loaded, or the IPC call otherwise fails - this is an optional dependency, not a hard requirement.
+    /// </summary>
+    internal uint GetOwnedQuantity(uint itemId)
+    {
+        if (!GetPluginState("InventoryTools").Loaded)
+            return 0;
+
+        try
+        {
+            return allaganToolsItemCount.InvokeFunc(itemId, true, OwnedQuantityCategories, false);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Allagan Tools IPC call failed");
+            return 0;
         }
     }
 
