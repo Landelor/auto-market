@@ -146,6 +146,7 @@ public sealed partial class MainWindow : Window, IDisposable
                 AddToCart(selected, visibleListings);
             ImGui.SameLine();
             ImGui.TextDisabled("Cart purchases whole stacks and may exceed the target on the final stack.");
+            ImGui.TextDisabled("Updated: green = verified live in your own client; gray/amber/red = how old the Universalis report is.");
             DrawListings(visibleListings, dependenciesReady);
         }
 

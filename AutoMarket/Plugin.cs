@@ -44,6 +44,8 @@ public sealed partial class Plugin : IDalamudPlugin
         MarketClient = new MarketClient(PluginInterface.Manifest.AssemblyVersion?.ToString() ?? "dev");
         historyPath = Path.Combine(PluginInterface.GetPluginConfigDirectory(), "history.json");
         purchaseHistory = LoadHistory();
+        marketCachePath = Path.Combine(PluginInterface.GetPluginConfigDirectory(), "marketCache.json");
+        marketCache = LoadMarketCache();
         lifestreamCommand = PluginInterface.GetIpcSubscriber<string, object>("Lifestream.ExecuteCommand");
         allaganToolsItemCount = PluginInterface.GetIpcSubscriber<uint, bool, uint[], bool, uint>("AllaganTools.ItemCountOwnedByCategory");
         mainWindow = new MainWindow(this);

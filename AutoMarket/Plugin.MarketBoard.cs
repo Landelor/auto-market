@@ -252,6 +252,10 @@ public sealed partial class Plugin
 
     private void OnOfferingsReceived(IMarketBoardCurrentOfferings offerings)
     {
+        var world = CurrentLocation?.World;
+        if (!string.IsNullOrWhiteSpace(world))
+            CacheLiveOfferings(world, offerings.ItemListings);
+
         if (pendingPurchase is not { } request || !listingRequestStarted)
             return;
 

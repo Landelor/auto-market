@@ -72,7 +72,8 @@ public sealed partial class MainWindow
             ImGui.TableNextColumn();
             ImGui.Text(listing.World);
             ImGui.TableNextColumn();
-            ImGui.Text(FormatAge(listing.LastReviewTime));
+            var (freshnessText, freshnessColor) = FormatFreshness(listing);
+            ImGui.TextColored(freshnessColor, freshnessText);
             ImGui.TableNextColumn();
             if (plugin.IsPurchasePending)
             {
@@ -147,7 +148,9 @@ public sealed partial class MainWindow
         try
         {
             var result = completed.GetAwaiter().GetResult();
-            listings = selectedItem?.Id == searchItemId ? result : [];
+            listings = selectedItem is { } selected && searchItemId == selected.Id
+                ? plugin.MergeWithCache(selected.Id, result)
+                : [];
             var dataCenterCount = listings
                 .Select(listing => GetDataCenter(listing.World))
                 .Where(dataCenter => dataCenter != "Unknown")
@@ -195,5 +198,28 @@ public sealed partial class MainWindow
         return age.TotalMinutes < 60
             ? $"{Math.Max(0, age.TotalMinutes):N0}m"
             : $"{Math.Max(0, age.TotalHours):N1}h";
+    }
+
+    /// <summary>
+    /// Text + color for how much a listing's price can be trusted: green when we personally verified
+    /// it live on a market board recently (<see cref="Plugin.MergeWithCache"/>), fading from neutral to
+    /// amber to red as a plain Universalis report gets older and more likely to be stale.
+    /// </summary>
+    private static (string Text, Vector4 Color) FormatFreshness(MarketQuote listing)
+    {
+        if (listing.LiveVerified)
+            return ($"Verified {FormatAge(listing.LastReviewTime)}", new Vector4(0.3f, 1f, 0.4f, 1f));
+
+        if (listing.LastReviewTime <= 0)
+            return ("Unknown", new Vector4(0.7f, 0.7f, 0.7f, 1f));
+
+        var age = DateTimeOffset.UtcNow - DateTimeOffset.FromUnixTimeSeconds(listing.LastReviewTime);
+        var color = age.TotalMinutes switch
+        {
+            <= 20 => new Vector4(0.7f, 0.7f, 0.7f, 1f),
+            <= 60 => new Vector4(1f, 0.7f, 0.2f, 1f),
+            _ => new Vector4(1f, 0.4f, 0.4f, 1f),
+        };
+        return (FormatAge(listing.LastReviewTime), color);
     }
 }

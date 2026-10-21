@@ -12,7 +12,8 @@ internal sealed record MarketQuote(
     string RetainerName,
     long LastReviewTime,
     ulong ListingId,
-    ulong RetainerId)
+    ulong RetainerId,
+    bool LiveVerified = false)
 {
     internal bool MatchesLive(uint unitPrice, uint quantity, bool hq, bool flexibleQuantity = false) =>
         unitPrice <= PricePerUnit

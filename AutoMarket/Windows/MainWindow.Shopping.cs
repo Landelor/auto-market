@@ -90,7 +90,8 @@ public sealed partial class MainWindow
                     ImGui.TableNextColumn();
                     ImGui.Text(quote.RetainerName);
                     ImGui.TableNextColumn();
-                    ImGui.Text(FormatAge(quote.LastReviewTime));
+                    var (freshnessText, freshnessColor) = FormatFreshness(quote);
+                    ImGui.TextColored(freshnessColor, freshnessText);
                     ImGui.TableNextColumn();
                     if (quoteIndex == 0 && !plugin.IsPurchasePending && ImGui.SmallButton($"Remove plan##cart-{order.Id}"))
                         remove = index;

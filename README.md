@@ -20,13 +20,14 @@ AutoMarket checks these dependencies when it loads.
 6. AutoMarket buys whole stacks, uses equal-or-cheaper live fallbacks with matching HQ/NQ quality, and stops when the (remaining) target or budget is reached.
 7. Every purchase checks live gil and free inventory space, shows progress, and is saved to purchase history after server confirmation.
 
-Universalis data is crowdsourced and can be stale. AutoMarket never buys above the planned unit price or budget. Because market listings are sold as whole stacks, the final stack can exceed the requested target quantity.
+Universalis data is crowdsourced and can be stale, since it only knows what other players' clients have recently uploaded. AutoMarket keeps its own local cache of listings it has personally seen on a live market board (while you browse, or mid-purchase) and prefers that over a Universalis report for the same world/item when it's newer; the "Updated" column is green when a row is live-verified this way, and fades from gray to amber to red as a plain Universalis report gets older. AutoMarket never buys above the planned unit price or budget. Because market listings are sold as whole stacks, the final stack can exceed the requested target quantity.
 
 ## Source layout
 
 - `Plugin.cs`: Dalamud services, plugin lifecycle, current location, and Lifestream travel.
 - `Plugin.Purchases.cs`: purchase queue, budgets, progress, and history.
 - `Plugin.MarketBoard.cs`: in-game market search, live validation, retries, and purchase requests.
+- `Plugin.MarketCache.cs`: local cache of live-verified listings, merged against Universalis results.
 - `MarketClient.cs`: Universalis HTTP client and response mapping.
 - `MarketModels.cs` / `PurchasePlanner.cs`: shared records and quantity-first planning.
 - `Windows/MainWindow*.cs`: main UI, search UI, and shopping/history UI.
