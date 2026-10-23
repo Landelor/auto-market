@@ -305,19 +305,26 @@ public sealed partial class Plugin
             return -1;
 
         var agent = AgentItemSearch.Instance();
-        if (agent == null || agent->ItemBuffer == null)
-            return -1; // Can't verify rows yet this frame; the caller retries until it can.
-
-        var count = Math.Min((int)agent->ItemCount, addon->ResultsList->ListLength);
-        for (var index = 0; index < count; index++)
+        if (agent != null && agent->ItemBuffer != null)
         {
-            if (agent->ItemBuffer[index] == itemId)
-                return index;
+            var count = Math.Min((int)agent->ItemCount, addon->ResultsList->ListLength);
+            for (var index = 0; index < count; index++)
+            {
+                if (agent->ItemBuffer[index] == itemId)
+                    return index;
+            }
         }
 
-        // The exact item isn't in the results (yet, or a same-prefix item like "Sykon Salad" is
-        // all that matched) - never guess by clicking row 0. The caller retries the text search
-        // and ultimately skips this item rather than opening the wrong one.
-        return -1;
+        // NOTE: AgentItemSearch.ItemBuffer/ItemCount do not appear to reflect the result list
+        // populated by this plugin's direct SetText+RunSearch() call (verified broken in 0.7.0.1 -
+        // the match loop above never succeeds, even for unambiguous item names), so this falls
+        // back to the first row exactly as AutoMarket did before that attempted fix. This can
+        // click the wrong row when several similarly-named items match the search text (e.g.
+        // "Sykon" vs "Sykon Salad"), but it is NOT able to cause a wrong purchase: PurchaseLiveListing
+        // and OnOfferingsReceived both re-filter live listings by exact ItemId before spending any
+        // gil, so a wrong-row click just fails safely (skipped) rather than buying the wrong item.
+        // TODO: find a reliable way to read the per-row item ID for a non-partial search before
+        // re-attempting a stricter fix; this needs verification in a live game session.
+        return 0;
     }
 }
