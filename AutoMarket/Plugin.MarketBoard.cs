@@ -232,6 +232,39 @@ public sealed partial class Plugin
         if (now - listingRequestedAt < listingTimeout)
             return;
 
+        // The result we clicked never came back with any listing for our item - the search text
+        // matched several similarly named items (e.g. "Sykon" also matching "Sykon Salad",
+        // "Sykon Compote", etc.) and we most likely opened a decoy's board instead of the exact
+        // item. Retrying this same row would just waste another wait on a board that can never
+        // match, so move straight to the next result row instead of retrying it.
+        if (!liveOfferingsReceived)
+        {
+            if (addon != null && addon->AtkUnitBase.IsVisible && addon->ResultsList != null
+                && searchResultRowIndex + 1 < addon->ResultsList->ListLength)
+            {
+                searchResultRowIndex++;
+                var resultAddon = (AtkUnitBase*)GameGui.GetAddonByName("ItemSearchResult").Address;
+                if (resultAddon != null && resultAddon->IsVisible)
+                    resultAddon->Close(true);
+
+                listingRequestStarted = false;
+                listingAttempts = 0;
+                liveListingId = 0;
+                liveListingMatchedAt = default;
+                liveOfferingsReceived = false;
+                ProgressStage = "Trying next search result";
+                PurchaseStatus = $"[{ProgressStage}] Checking search result {searchResultRowIndex + 1} for {request.ItemName}, {FormatQueueProgress()}.";
+                Log.Information("Market result for {ItemId} did not match; trying result index {Next}", request.ItemId, searchResultRowIndex);
+                return;
+            }
+
+            SkipCurrentPurchase("the item did not appear among the live market results tried.");
+            return;
+        }
+
+        // The right item's board is open (a response has mentioned our ItemId), but nothing has
+        // matched our price/quality/budget plan yet - retry the same row once in case the game
+        // just hadn't finished loading every listing when we first checked.
         if (listingAttempts == 1)
         {
             var resultAddon = (AtkUnitBase*)GameGui.GetAddonByName("ItemSearchResult").Address;
@@ -245,32 +278,7 @@ public sealed partial class Plugin
             return;
         }
 
-        // The result we clicked never came back with any listing for our item, even after a
-        // retry - the search text matched several similarly named items (e.g. "Sykon" also
-        // matching "Sykon Salad", "Sykon Compote", etc.) and we most likely opened a decoy's
-        // board instead of the exact item. Try the next row in the results before giving up.
-        if (!liveOfferingsReceived && addon != null && addon->AtkUnitBase.IsVisible && addon->ResultsList != null
-            && searchResultRowIndex + 1 < addon->ResultsList->ListLength)
-        {
-            searchResultRowIndex++;
-            var resultAddon = (AtkUnitBase*)GameGui.GetAddonByName("ItemSearchResult").Address;
-            if (resultAddon != null && resultAddon->IsVisible)
-                resultAddon->Close(true);
-
-            listingRequestStarted = false;
-            listingAttempts = 0;
-            liveListingId = 0;
-            liveListingMatchedAt = default;
-            liveOfferingsReceived = false;
-            ProgressStage = "Trying next search result";
-            PurchaseStatus = $"[{ProgressStage}] Checking search result {searchResultRowIndex + 1} for {request.ItemName}, {FormatQueueProgress()}.";
-            Log.Information("Market result for {ItemId} did not match; trying result index {Next}", request.ItemId, searchResultRowIndex);
-            return;
-        }
-
-        SkipCurrentPurchase(liveOfferingsReceived
-            ? "no safe live listing matches this purchase plan."
-            : "the item did not appear among the live market results tried.");
+        SkipCurrentPurchase("no safe live listing matches this purchase plan.");
     }
 
     private void OnOfferingsReceived(IMarketBoardCurrentOfferings offerings)
