@@ -295,7 +295,17 @@ public sealed partial class Plugin
         var encoded = Encoding.UTF8.GetBytes(itemName + '\0');
         fixed (byte* text = encoded)
             addon->SearchTextInput->SetText(text);
+
+        // Force an exact-name match so a search like "Sykon" cannot also surface "Sykon Salad",
+        // "Sykon Compote", "Sykon Bavarois", or "Sykon Cookie" as decoys - with Partial Match off,
+        // the game only returns the item whose name is exactly what we searched for, so there is
+        // nothing ambiguous left to click. Restored to whatever the player had afterward so this
+        // doesn't silently change their own Partial Match preference for the next manual search.
+        var wasPartialMatch = addon->PartialMatch;
+        addon->PartialMatch = false;
         addon->RunSearch(false);
+        addon->PartialMatch = wasPartialMatch;
+
         return true;
     }
 
