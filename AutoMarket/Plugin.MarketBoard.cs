@@ -305,16 +305,19 @@ public sealed partial class Plugin
             return -1;
 
         var agent = AgentItemSearch.Instance();
-        if (agent != null && agent->ItemBuffer != null)
+        if (agent == null || agent->ItemBuffer == null)
+            return -1; // Can't verify rows yet this frame; the caller retries until it can.
+
+        var count = Math.Min((int)agent->ItemCount, addon->ResultsList->ListLength);
+        for (var index = 0; index < count; index++)
         {
-            var count = Math.Min((int)agent->ItemCount, addon->ResultsList->ListLength);
-            for (var index = 0; index < count; index++)
-            {
-                if (agent->ItemBuffer[index] == itemId)
-                    return index;
-            }
+            if (agent->ItemBuffer[index] == itemId)
+                return index;
         }
 
-        return 0;
+        // The exact item isn't in the results (yet, or a same-prefix item like "Sykon Salad" is
+        // all that matched) - never guess by clicking row 0. The caller retries the text search
+        // and ultimately skips this item rather than opening the wrong one.
+        return -1;
     }
 }
