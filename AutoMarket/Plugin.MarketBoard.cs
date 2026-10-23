@@ -85,6 +85,7 @@ public sealed partial class Plugin
 
             searchSubmitted = true;
             searchAttempts = 1;
+            searchResultRowIndex = 0;
             listingRequestedAt = now;
             ProgressStage = "Searching";
             PurchaseStatus = $"[{ProgressStage}] Live {request.Quote.World} market for {request.ItemName}, {FormatQueueProgress()}.";
@@ -95,16 +96,15 @@ public sealed partial class Plugin
         if (listingRequestStarted)
             return true;
 
-        var resultIndex = FindSearchResultIndex(addon, request.ItemId);
-        if (resultIndex >= 0)
+        if (addon->ResultsList != null && searchResultRowIndex < addon->ResultsList->ListLength)
         {
-            addon->ResultsList->DispatchItemEvent(resultIndex, AtkEventType.ListItemClick);
+            addon->ResultsList->DispatchItemEvent(searchResultRowIndex, AtkEventType.ListItemClick);
             listingRequestStarted = true;
             listingAttempts = 1;
             listingRequestedAt = now;
             ProgressStage = "Verifying live listings";
             PurchaseStatus = $"[{ProgressStage}] Checking price, quality, budget, gil, and inventory, {FormatQueueProgress()}.";
-            Log.Information("Market result {Index} opened for {ItemId}", resultIndex, request.ItemId);
+            Log.Information("Market result {Index} opened for {ItemId}", searchResultRowIndex, request.ItemId);
             return false;
         }
 
@@ -115,6 +115,7 @@ public sealed partial class Plugin
         if (searchAttempts == 1 && RunTextSearch(addon, request.ItemName))
         {
             searchAttempts = 2;
+            searchResultRowIndex = 0;
             listingRequestedAt = now;
             Log.Information("Market text search retried for {ItemId}", request.ItemId);
             return false;
@@ -211,8 +212,7 @@ public sealed partial class Plugin
             if (now < listingRetryAt || addon == null || !addon->AtkUnitBase.IsVisible)
                 return;
 
-            var resultIndex = FindSearchResultIndex(addon, request.ItemId);
-            if (resultIndex < 0)
+            if (addon->ResultsList == null || searchResultRowIndex >= addon->ResultsList->ListLength)
             {
                 SkipCurrentPurchase("the market result disappeared before listings could be refreshed.");
                 return;
@@ -221,10 +221,10 @@ public sealed partial class Plugin
             liveListingId = 0;
             liveListingMatchedAt = default;
             liveOfferingsReceived = false;
-            addon->ResultsList->DispatchItemEvent(resultIndex, AtkEventType.ListItemClick);
+            addon->ResultsList->DispatchItemEvent(searchResultRowIndex, AtkEventType.ListItemClick);
             listingRetryAt = default;
             listingRequestedAt = now;
-            Log.Information("Live listing request retried for {ItemId}", request.ItemId);
+            Log.Information("Live listing request retried for {ItemId}, result {Index}", request.ItemId, searchResultRowIndex);
             return;
         }
 
@@ -245,9 +245,32 @@ public sealed partial class Plugin
             return;
         }
 
+        // The result we clicked never came back with any listing for our item, even after a
+        // retry - the search text matched several similarly named items (e.g. "Sykon" also
+        // matching "Sykon Salad", "Sykon Compote", etc.) and we most likely opened a decoy's
+        // board instead of the exact item. Try the next row in the results before giving up.
+        if (!liveOfferingsReceived && addon != null && addon->AtkUnitBase.IsVisible && addon->ResultsList != null
+            && searchResultRowIndex + 1 < addon->ResultsList->ListLength)
+        {
+            searchResultRowIndex++;
+            var resultAddon = (AtkUnitBase*)GameGui.GetAddonByName("ItemSearchResult").Address;
+            if (resultAddon != null && resultAddon->IsVisible)
+                resultAddon->Close(true);
+
+            listingRequestStarted = false;
+            listingAttempts = 0;
+            liveListingId = 0;
+            liveListingMatchedAt = default;
+            liveOfferingsReceived = false;
+            ProgressStage = "Trying next search result";
+            PurchaseStatus = $"[{ProgressStage}] Checking search result {searchResultRowIndex + 1} for {request.ItemName}, {FormatQueueProgress()}.";
+            Log.Information("Market result for {ItemId} did not match; trying result index {Next}", request.ItemId, searchResultRowIndex);
+            return;
+        }
+
         SkipCurrentPurchase(liveOfferingsReceived
             ? "no safe live listing matches this purchase plan."
-            : "the market board did not return live listings.");
+            : "the item did not appear among the live market results tried.");
     }
 
     private void OnOfferingsReceived(IMarketBoardCurrentOfferings offerings)
@@ -295,46 +318,7 @@ public sealed partial class Plugin
         var encoded = Encoding.UTF8.GetBytes(itemName + '\0');
         fixed (byte* text = encoded)
             addon->SearchTextInput->SetText(text);
-
-        // Force an exact-name match so a search like "Sykon" cannot also surface "Sykon Salad",
-        // "Sykon Compote", "Sykon Bavarois", or "Sykon Cookie" as decoys - with Partial Match off,
-        // the game only returns the item whose name is exactly what we searched for, so there is
-        // nothing ambiguous left to click. Restored to whatever the player had afterward so this
-        // doesn't silently change their own Partial Match preference for the next manual search.
-        var wasPartialMatch = addon->PartialMatch;
-        addon->PartialMatch = false;
         addon->RunSearch(false);
-        addon->PartialMatch = wasPartialMatch;
-
         return true;
-    }
-
-    private static unsafe int FindSearchResultIndex(AddonItemSearch* addon, uint itemId)
-    {
-        if (addon->ResultsList == null || addon->ResultsList->ListLength == 0)
-            return -1;
-
-        var agent = AgentItemSearch.Instance();
-        if (agent != null && agent->ItemBuffer != null)
-        {
-            var count = Math.Min((int)agent->ItemCount, addon->ResultsList->ListLength);
-            for (var index = 0; index < count; index++)
-            {
-                if (agent->ItemBuffer[index] == itemId)
-                    return index;
-            }
-        }
-
-        // NOTE: AgentItemSearch.ItemBuffer/ItemCount do not appear to reflect the result list
-        // populated by this plugin's direct SetText+RunSearch() call (verified broken in 0.7.0.1 -
-        // the match loop above never succeeds, even for unambiguous item names), so this falls
-        // back to the first row exactly as AutoMarket did before that attempted fix. This can
-        // click the wrong row when several similarly-named items match the search text (e.g.
-        // "Sykon" vs "Sykon Salad"), but it is NOT able to cause a wrong purchase: PurchaseLiveListing
-        // and OnOfferingsReceived both re-filter live listings by exact ItemId before spending any
-        // gil, so a wrong-row click just fails safely (skipped) rather than buying the wrong item.
-        // TODO: find a reliable way to read the per-row item ID for a non-partial search before
-        // re-attempting a stricter fix; this needs verification in a live game session.
-        return 0;
     }
 }

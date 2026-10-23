@@ -34,6 +34,7 @@ public sealed partial class Plugin
     private DateTimeOffset marketBoardDetectedAt;
     private bool searchSubmitted;
     private int searchAttempts;
+    private int searchResultRowIndex;
     private bool listingRequestStarted;
     private int listingAttempts;
     private DateTimeOffset listingRetryAt;
@@ -278,6 +279,7 @@ public sealed partial class Plugin
         marketBoardDetectedAt = default;
         searchSubmitted = false;
         searchAttempts = 0;
+        searchResultRowIndex = 0;
         listingRequestStarted = false;
         listingAttempts = 0;
         listingRetryAt = default;
