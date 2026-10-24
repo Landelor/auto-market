@@ -310,10 +310,15 @@ public sealed partial class Plugin
 
     private void OnItemPurchased(IMarketBoardPurchase purchase)
     {
-        if (pendingPurchase is { } request
-            && awaitingPurchase
-            && purchase.CatalogId == request.ItemId
-            && purchase.ItemQuantity == sentQuantity)
+        if (pendingPurchase is not { } request || !awaitingPurchase)
+            return;
+
+        // The purchase-confirmation packet has no separate HQ flag (unlike the live listings
+        // packet, which does) - FFXIV encodes an HQ item here the classic way, by adding
+        // 1,000,000 to the base item ID, so a confirmed HQ purchase's CatalogId never equals
+        // request.ItemId (the plain sheet ID) without normalizing it first.
+        var catalogId = purchase.CatalogId >= 1_000_000 ? purchase.CatalogId - 1_000_000 : purchase.CatalogId;
+        if (catalogId == request.ItemId && purchase.ItemQuantity == sentQuantity)
             purchaseConfirmed = true;
     }
 
