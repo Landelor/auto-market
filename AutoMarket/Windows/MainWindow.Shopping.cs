@@ -110,6 +110,7 @@ public sealed partial class MainWindow
         else if (plugin.IsPurchasePending)
         {
             ImGui.TextDisabled("Route in progress...");
+            ImGui.Text($"Gil spent so far: {plugin.RouteSpent:N0}");
         }
         else if (ImGui.Button("Start grouped purchase route"))
         {

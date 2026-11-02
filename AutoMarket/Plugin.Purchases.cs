@@ -57,6 +57,7 @@ public sealed partial class Plugin
     internal int QueueCompleted { get; private set; }
     internal int QueueSkipped { get; private set; }
     internal int QueueTotal { get; private set; }
+    internal long RouteSpent { get; private set; }
     internal IReadOnlyList<PurchaseHistoryEntry> PurchaseHistory => purchaseHistory;
 
     internal unsafe string? TravelAndBuy(uint itemId, string itemName, MarketQuote quote)
@@ -70,6 +71,7 @@ public sealed partial class Plugin
         QueueCompleted = 0;
         QueueSkipped = 0;
         QueueTotal = 1;
+        RouteSpent = 0;
         return BeginNextPurchase();
     }
 
@@ -96,6 +98,7 @@ public sealed partial class Plugin
         QueueCompleted = 0;
         QueueSkipped = 0;
         QueueTotal = route.Count;
+        RouteSpent = 0;
         return BeginNextPurchase();
     }
 
@@ -217,6 +220,7 @@ public sealed partial class Plugin
             return;
 
         var total = checked((long)sentUnitPrice * sentQuantity + sentTax);
+        RouteSpent += total;
         if (request.CartId != 0 && cartProgress.TryGetValue(request.CartId, out var progress))
         {
             progress.PurchasedQuantity += (int)sentQuantity;
