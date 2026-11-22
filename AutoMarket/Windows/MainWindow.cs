@@ -87,6 +87,7 @@ public sealed partial class MainWindow : Window, IDisposable
     public override void Draw()
     {
         FinishSearch();
+        FinishImportBuild();
         var dependenciesReady = DrawDependencyStatus();
 
         ImGui.Text("Item");
@@ -150,6 +151,7 @@ public sealed partial class MainWindow : Window, IDisposable
             DrawListings(visibleListings, dependenciesReady);
         }
 
+        DrawImport();
         DrawCart(dependenciesReady);
         DrawHistory();
     }
