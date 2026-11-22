@@ -86,6 +86,19 @@ public sealed partial class MainWindow : Window, IDisposable
 
     public override void Draw()
     {
+        Theme.Push();
+        try
+        {
+            DrawContent();
+        }
+        finally
+        {
+            Theme.Pop();
+        }
+    }
+
+    private void DrawContent()
+    {
         FinishSearch();
         FinishImportBuild();
         var dependenciesReady = DrawDependencyStatus();
@@ -129,15 +142,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
         ImGui.Separator();
         ImGui.TextWrapped(status);
-        if (!string.IsNullOrWhiteSpace(plugin.PurchaseStatus))
-            ImGui.TextWrapped(plugin.PurchaseStatus);
-        if (plugin.QueueTotal > 0)
-        {
-            ImGui.Text($"Stage: {plugin.ProgressStage}");
-            ImGui.ProgressBar(Math.Clamp((float)plugin.QueueCompleted / plugin.QueueTotal, 0, 1), new Vector2(-1, 0), $"{plugin.QueueCompleted}/{plugin.QueueTotal}");
-        }
-        if (plugin.IsPurchasePending && ImGui.SmallButton("Cancel purchase"))
-            plugin.CancelPurchase();
+        DrawRouteCard();
 
         var visibleListings = listings.Where(MatchesQuality).ToList();
         if (listings.Count > 0)
@@ -163,9 +168,10 @@ public sealed partial class MainWindow : Window, IDisposable
 
         ImGui.Text("Dependencies");
         DrawPluginStatus("Lifestream", lifestream, required: true);
+        ImGui.SameLine();
+        DrawPluginStatus("Allagan Tools", allaganTools, required: false);
         if (!lifestream.Loaded)
             ImGui.TextWrapped("Install or enable Lifestream, then return here. AutoMarket will detect it automatically.");
-        DrawPluginStatus("Allagan Tools", allaganTools, required: false);
         if (!allaganTools.Loaded)
             ImGui.TextWrapped("Optional: install or enable Allagan Tools so target quantities subtract what you already hold in your inventory and your retainers.");
         ImGui.Separator();
@@ -176,11 +182,11 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         var (color, text) = state switch
         {
-            { Loaded: true } => (new Vector4(0.3f, 1f, 0.4f, 1f), "loaded"),
-            { Installed: true } => (new Vector4(1f, 0.7f, 0.2f, 1f), "installed, disabled"),
-            _ when required => (new Vector4(1f, 0.3f, 0.3f, 1f), "missing, required"),
-            _ => (new Vector4(0.7f, 0.7f, 0.7f, 1f), "not installed, optional"),
+            { Loaded: true } => (Theme.Green, "loaded"),
+            { Installed: true } => (Theme.Amber, "installed, disabled"),
+            _ when required => (Theme.Rose, "missing, required"),
+            _ => (Theme.Muted, "not installed, optional"),
         };
-        ImGui.TextColored(color, $"{name}: {text}");
+        Theme.Pill($"{name}: {text}", color);
     }
 }

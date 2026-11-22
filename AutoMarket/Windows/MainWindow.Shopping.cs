@@ -109,16 +109,19 @@ public sealed partial class MainWindow
         }
         else if (plugin.IsPurchasePending)
         {
-            ImGui.TextDisabled("Route in progress...");
-            ImGui.Text($"Gil spent so far: {plugin.RouteSpent:N0}");
+            ImGui.TextDisabled("Route in progress - see the dashboard card above to stop it.");
         }
-        else if (ImGui.Button("Start grouped purchase route"))
+        else
         {
-            var error = plugin.StartCart(cart);
-            status = error ?? $"Started a {cart.SelectMany(order => order.PlannedQuotes).Select(quote => quote.World).Distinct(StringComparer.OrdinalIgnoreCase).Count():N0}-world route.";
+            var totalGil = cart.SelectMany(order => order.PlannedQuotes).Sum(quote => quote.Total);
+            if (Theme.ActionBar("START GROUPED PURCHASE ROUTE", $"{cart.Count:N0} items \u00b7 {totalGil:N0} gil", Theme.Teal))
+            {
+                var error = plugin.StartCart(cart);
+                status = error ?? $"Started a {cart.SelectMany(order => order.PlannedQuotes).Select(quote => quote.World).Distinct(StringComparer.OrdinalIgnoreCase).Count():N0}-world route.";
+            }
         }
 
-        ImGui.SameLine();
+        ImGui.Spacing();
         if (!plugin.IsPurchasePending && ImGui.Button("Clear cart"))
             cart.Clear();
     }
