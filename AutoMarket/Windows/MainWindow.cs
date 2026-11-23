@@ -26,6 +26,12 @@ public sealed partial class MainWindow : Window, IDisposable
     private readonly List<ItemChoice> matches = [];
     private readonly List<CartOrder> cart = [];
     private readonly Dictionary<string, string> worldDataCenters = new(StringComparer.OrdinalIgnoreCase);
+    private readonly WindowSizeConstraints expandedConstraints;
+    private static readonly WindowSizeConstraints CollapsedConstraints = new()
+    {
+        MinimumSize = new Vector2(320, 40),
+        MaximumSize = new Vector2(float.MaxValue, 40),
+    };
     private CancellationTokenSource? searchCancellation;
     private Task<List<MarketQuote>>? searchTask;
     private ItemChoice? selectedItem;
@@ -38,15 +44,18 @@ public sealed partial class MainWindow : Window, IDisposable
     private int maxUnitPrice;
     private int maxBudget;
     private int nextCartId = 1;
+    private bool headerCollapsed;
 
     public MainWindow(Plugin plugin) : base("AutoMarket###AutoMarketMain")
     {
         this.plugin = plugin;
-        SizeConstraints = new WindowSizeConstraints
+        Flags |= ImGuiWindowFlags.NoTitleBar;
+        expandedConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(800, 620),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
         };
+        SizeConstraints = expandedConstraints;
 
         foreach (var item in Plugin.DataManager.GetExcelSheet<Item>())
         {
@@ -84,6 +93,12 @@ public sealed partial class MainWindow : Window, IDisposable
         searchCancellation?.Dispose();
     }
 
+    public override void PreDraw()
+    {
+        base.PreDraw();
+        SizeConstraints = headerCollapsed ? CollapsedConstraints : expandedConstraints;
+    }
+
     public override void Draw()
     {
         Theme.Push();
@@ -101,6 +116,10 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         FinishSearch();
         FinishImportBuild();
+        DrawHeaderBar();
+        if (headerCollapsed)
+            return;
+
         var dependenciesReady = DrawDependencyStatus();
 
         ImGui.Text("Item");
@@ -158,7 +177,6 @@ public sealed partial class MainWindow : Window, IDisposable
 
         DrawImport();
         DrawCart(dependenciesReady);
-        DrawHistory();
     }
 
     private bool DrawDependencyStatus()

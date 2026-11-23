@@ -125,48 +125,4 @@ public sealed partial class MainWindow
         if (!plugin.IsPurchasePending && ImGui.Button("Clear cart"))
             cart.Clear();
     }
-
-    private void DrawHistory()
-    {
-        ImGui.Separator();
-        if (!ImGui.CollapsingHeader($"Purchase history ({plugin.PurchaseHistory.Count:N0})"))
-            return;
-
-        if (plugin.PurchaseHistory.Count == 0)
-        {
-            ImGui.TextDisabled("No confirmed purchases yet.");
-            return;
-        }
-
-        if (!ImGui.BeginTable("##AutoMarketHistory", 7, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp))
-            return;
-
-        ImGui.TableSetupColumn("Time");
-        ImGui.TableSetupColumn("Item");
-        ImGui.TableSetupColumn("Quality");
-        ImGui.TableSetupColumn("Quantity");
-        ImGui.TableSetupColumn("Unit price");
-        ImGui.TableSetupColumn("Total + tax");
-        ImGui.TableSetupColumn("World");
-        ImGui.TableHeadersRow();
-        foreach (var entry in plugin.PurchaseHistory.Take(20))
-        {
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
-            ImGui.Text(entry.PurchasedAt.ToLocalTime().ToString("g"));
-            ImGui.TableNextColumn();
-            ImGui.Text(entry.ItemName);
-            ImGui.TableNextColumn();
-            ImGui.Text(entry.Hq ? "HQ" : "NQ");
-            ImGui.TableNextColumn();
-            ImGui.Text($"{entry.Quantity:N0}");
-            ImGui.TableNextColumn();
-            ImGui.Text($"{entry.UnitPrice:N0}");
-            ImGui.TableNextColumn();
-            ImGui.Text($"{entry.Total:N0}");
-            ImGui.TableNextColumn();
-            ImGui.Text(entry.World);
-        }
-        ImGui.EndTable();
-    }
 }
