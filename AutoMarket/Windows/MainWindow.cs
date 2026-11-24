@@ -180,7 +180,15 @@ public sealed partial class MainWindow : Window, IDisposable
             return;
 
         var scale = Dalamud.Interface.Utility.ImGuiHelpers.GlobalScale;
-        var bodyInset = 16f * scale; // comfortably bigger than the resize-grip hit zone it exposes
+        // ImGui's native resize-drag hit-test runs on whichever window is topmost under the
+        // mouse; a child window always wins that over its own parent for the pixels it covers,
+        // *regardless of what's drawn there* - so the body child must leave a real uncovered
+        // strip along the window's own right/bottom edges, not just a cosmetically-sized gap.
+        // ADT's AppWindow.cs gets this for free structurally (a 6px content-right-inset plus
+        // its always-present bottom dock bar), so its resize-grip hint sits over genuinely bare
+        // window, outside any child. 28px comfortably clears ImGui's actual corner hit-zone
+        // (~18-22px at default font sizes) with margin for AutoMarket's larger custom fonts.
+        var bodyInset = 28f * scale;
         var bodySize = ImGui.GetContentRegionAvail() - new Vector2(bodyInset, bodyInset);
         using (ImRaii.PushStyle(ImGuiStyleVar.WindowPadding, new Vector2(16f, 12f) * scale))
         using (var body = ImRaii.Child("##am_body", bodySize, false, ImGuiWindowFlags.AlwaysUseWindowPadding))
