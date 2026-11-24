@@ -1,14 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
   <PropertyGroup>
-    <Version>0.7.4.0</Version>
+    <Version>0.7.5.0</Version>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <IsPackable>false</IsPackable>
+    <!-- RebornMaterial (prototype dependency below) targets this Windows SDK version. -->
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="..\images\icon.png">
       <Link>images\icon.png</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <!-- Targeting windows10.0.* (required by RebornMaterial below) makes the SDK pull in the
+       Windows Runtime projection (Microsoft.Windows.SDK.NET.dll + WinRT.Runtime.dll, ~27MB) even
+       though this plugin never calls a WinRT API. Drop it so the release zip stays small. -->
+  <ItemGroup>
+    <FrameworkReference Remove="Microsoft.Windows.SDK.NET.Ref" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Prototype only: Material Design 3 ImGui components, same library GatherBuddyReborn
+         switched its UI to. Used by Windows/M3PreviewWindow.cs so we can compare it side-by-side
+         with the hand-rolled Nord Theme.cs before deciding whether to adopt it for real. -->
+    <PackageReference Include="RebornMaterial" Version="7.5.8.4" />
   </ItemGroup>
 </Project>
