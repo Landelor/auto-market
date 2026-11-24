@@ -42,6 +42,7 @@ public sealed partial class MainWindow : Window, IDisposable
     private int nextCartId = 1;
     private bool headerCollapsed;
     private IDisposable? chrome;
+    private Vector2? manualSize;
 
     public MainWindow(Plugin plugin) : base("AutoMarket###AutoMarketMain")
     {
@@ -104,10 +105,26 @@ public sealed partial class MainWindow : Window, IDisposable
                 MinimumSize = new Vector2(320, collapsedHeight),
                 MaximumSize = new Vector2(float.MaxValue, collapsedHeight),
             };
+            // Size is a sticky property (not reset each frame): if the expanded branch forced it
+            // last time this window was open, it must be cleared here or it keeps fighting the
+            // collapsed-height constraint above every frame instead of letting it clamp freely.
+            Size = null;
         }
         else
         {
             SizeConstraints = expandedConstraints;
+            if (manualSize is { } wanted)
+            {
+                // Native border/corner resize-drag turned out to be unreliable here across three
+                // separate fixes (chrome timing, padding, child insets) - most likely some other
+                // ImGui ID/active-item interaction we could not pin down without a live debugger.
+                // DrawResizeGrip() below now does the drag itself via a plain InvisibleButton and
+                // writes the result here, so resizing no longer depends on ImGui's native corner
+                // hit-test at all. ImGuiCond.Always every frame is deliberate: it is the only way
+                // to keep asserting a size the user chose against ImGui's own layout/ini recall.
+                Size = wanted;
+                SizeCondition = ImGuiCond.Always;
+            }
         }
 
         // Dalamud calls PreDraw() before ImGui.Begin() paints the window's background/border, and
@@ -131,30 +148,48 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         DrawContent();
         if (!headerCollapsed)
-            DrawResizeGripHint();
+            DrawResizeGrip();
     }
 
     /// <summary>
-    /// A visual corner hint (ADT's AppWindow.cs DrawResizeGrip) so the window's built-in
-    /// drag-to-resize corner - otherwise undiscoverable with no visible border - has an
-    /// affordance. Must be called against the outer window (after any child Begin/End has
-    /// returned), since it reads the *current* window's position/size/draw list.
+    /// A fully manual resize grip - not ImGui's native border/corner drag. Three releases in a
+    /// row (chrome push timing, zero window padding, body-child insets up to 28px) all failed to
+    /// make the native corner hit-test actually grab, even though it should have been clear by
+    /// then; whatever the remaining interaction is, it could not be diagnosed further without a
+    /// live ImGui debugger attached to the running game. A plain InvisibleButton + MouseDelta
+    /// drag sidesteps the native mechanism entirely and is a standard, reliable pattern for
+    /// custom-chrome ImGui windows. Must be called against the outer window (after any child
+    /// Begin/End has returned), since it reads the *current* window's position/size/draw list.
     /// </summary>
-    private static void DrawResizeGripHint()
+    private void DrawResizeGrip()
     {
         var scale = Dalamud.Interface.Utility.ImGuiHelpers.GlobalScale;
         const float gripSize = 14f;
         const float inset = 5f;
+        const float hitSize = 22f;
         var grip = gripSize * scale;
         var padding = inset * scale;
-        var corner = ImGui.GetWindowPos() + ImGui.GetWindowSize() - new Vector2(padding, padding);
-        var hovered = ImGui.IsMouseHoveringRect(corner - new Vector2(grip + padding, grip + padding), corner);
-        var color = ImGui.GetColorU32(Adt.AdtStyling.WithAlpha(Adt.AdtStyling.AccentTeal, hovered ? 0.85f : 0.45f));
+        var hit = hitSize * scale;
+        var corner = ImGui.GetWindowPos() + ImGui.GetWindowSize();
+
+        ImGui.SetCursorScreenPos(corner - new Vector2(hit, hit));
+        ImGui.InvisibleButton("##am_resize_grip", new Vector2(hit, hit));
+        var hovered = ImGui.IsItemHovered();
+        var active = ImGui.IsItemActive();
+        if (active)
+        {
+            var current = manualSize ?? ImGui.GetWindowSize() / scale;
+            var next = current + ImGui.GetIO().MouseDelta / scale;
+            manualSize = Vector2.Clamp(next, expandedConstraints.MinimumSize, expandedConstraints.MaximumSize);
+        }
+
+        var color = ImGui.GetColorU32(Adt.AdtStyling.WithAlpha(Adt.AdtStyling.AccentTeal, active ? 1f : hovered ? 0.85f : 0.45f));
         var dl = ImGui.GetWindowDrawList();
+        var anchor = corner - new Vector2(padding, padding);
         for (var line = 1; line <= 3; line++)
         {
             var offset = line * grip / 3f;
-            dl.AddLine(corner - new Vector2(offset, 0f), corner - new Vector2(0f, offset), color, 1.6f * scale);
+            dl.AddLine(anchor - new Vector2(offset, 0f), anchor - new Vector2(0f, offset), color, 1.6f * scale);
         }
     }
 
