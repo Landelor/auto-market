@@ -165,6 +165,11 @@ public sealed partial class MainWindow : Window, IDisposable
     /// running the full window height behind it, show only when content actually overflows (the
     /// child's own native scrollbar), and gives body content breathing room despite the window
     /// itself having zero padding.
+    ///
+    /// The child is deliberately sized a few pixels short of the window's own right/bottom edges
+    /// (ADT's Layout.ContentRightInset does the same, at 6px) - a child window that reaches all
+    /// the way to the physical edge takes mouse-hover priority over its parent there, which was
+    /// silently swallowing clicks on the native resize-drag corner right underneath it.
     /// </summary>
     private void DrawContent()
     {
@@ -175,8 +180,10 @@ public sealed partial class MainWindow : Window, IDisposable
             return;
 
         var scale = Dalamud.Interface.Utility.ImGuiHelpers.GlobalScale;
+        var bodyInset = 16f * scale; // comfortably bigger than the resize-grip hit zone it exposes
+        var bodySize = ImGui.GetContentRegionAvail() - new Vector2(bodyInset, bodyInset);
         using (ImRaii.PushStyle(ImGuiStyleVar.WindowPadding, new Vector2(16f, 12f) * scale))
-        using (var body = ImRaii.Child("##am_body", ImGui.GetContentRegionAvail(), false, ImGuiWindowFlags.AlwaysUseWindowPadding))
+        using (var body = ImRaii.Child("##am_body", bodySize, false, ImGuiWindowFlags.AlwaysUseWindowPadding))
         {
             if (body)
                 DrawBodyContent();
