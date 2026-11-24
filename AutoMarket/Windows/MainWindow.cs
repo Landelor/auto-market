@@ -27,11 +27,6 @@ public sealed partial class MainWindow : Window, IDisposable
     private readonly List<CartOrder> cart = [];
     private readonly Dictionary<string, string> worldDataCenters = new(StringComparer.OrdinalIgnoreCase);
     private readonly WindowSizeConstraints expandedConstraints;
-    private static readonly WindowSizeConstraints CollapsedConstraints = new()
-    {
-        MinimumSize = new Vector2(320, 40),
-        MaximumSize = new Vector2(float.MaxValue, 40),
-    };
     private CancellationTokenSource? searchCancellation;
     private Task<List<MarketQuote>>? searchTask;
     private ItemChoice? selectedItem;
@@ -96,13 +91,51 @@ public sealed partial class MainWindow : Window, IDisposable
     public override void PreDraw()
     {
         base.PreDraw();
-        SizeConstraints = headerCollapsed ? CollapsedConstraints : expandedConstraints;
+        if (headerCollapsed)
+        {
+            // Matches DrawHeaderBar's actual (DPI-scaled) height + the gap it leaves below itself,
+            // not a guessed fixed pixel value - a stale constant here would clip the real header.
+            var collapsedHeight = (HeaderHeight + 8f) * Dalamud.Interface.Utility.ImGuiHelpers.GlobalScale;
+            SizeConstraints = new WindowSizeConstraints
+            {
+                MinimumSize = new Vector2(320, collapsedHeight),
+                MaximumSize = new Vector2(float.MaxValue, collapsedHeight),
+            };
+        }
+        else
+        {
+            SizeConstraints = expandedConstraints;
+        }
     }
 
     public override void Draw()
     {
         using var chrome = Adt.AdtStyling.PushChrome();
         DrawContent();
+        if (!headerCollapsed)
+            DrawResizeGripHint();
+    }
+
+    /// <summary>
+    /// A purely visual corner hint (ADT's AppWindow.cs DrawResizeGrip) so the window's built-in
+    /// drag-to-resize border - otherwise an invisible, undiscoverable hitbox - has an affordance.
+    /// </summary>
+    private static void DrawResizeGripHint()
+    {
+        var scale = Dalamud.Interface.Utility.ImGuiHelpers.GlobalScale;
+        const float gripSize = 12f;
+        const float inset = 4f;
+        var grip = gripSize * scale;
+        var padding = inset * scale;
+        var corner = ImGui.GetWindowPos() + ImGui.GetWindowSize() - new Vector2(padding, padding);
+        var hovered = ImGui.IsMouseHoveringRect(corner - new Vector2(grip + padding, grip + padding), corner);
+        var color = ImGui.GetColorU32(Adt.AdtStyling.WithAlpha(Adt.AdtStyling.TextStrong, hovered ? 0.38f : 0.14f));
+        var dl = ImGui.GetWindowDrawList();
+        for (var line = 1; line <= 3; line++)
+        {
+            var offset = line * grip / 3f;
+            dl.AddLine(corner - new Vector2(offset, 0f), corner - new Vector2(0f, offset), color, 1.4f * scale);
+        }
     }
 
     private void DrawContent()

@@ -23,6 +23,14 @@ internal static class AdtStyling
     public static readonly Vector4 AccentRose = new(0.93f, 0.42f, 0.50f, 1.00f);
     public static readonly Vector4 AccentViolet = new(0.62f, 0.42f, 0.96f, 1.00f);
 
+    /// <summary>
+    /// A real (if cool/dim) hue for neutral/idle states. ADT's own ReadyState.cs never pairs a
+    /// status pill with a flat grey like <see cref="TextMuted"/> - every state gets a saturated
+    /// accent so the pill stays legible; this is that color for AutoMarket's "cart is empty" rest
+    /// state, which ADT has no equivalent of (it always has a tribe-running pipeline to show).
+    /// </summary>
+    public static readonly Vector4 AccentSlate = new(0.56f, 0.64f, 0.78f, 1.00f);
+
     public static readonly Vector4 WindowBg = new(0.046f, 0.056f, 0.068f, 0.985f);
     public static readonly Vector4 Surface0 = new(0.076f, 0.092f, 0.110f, 1.00f);
     public static readonly Vector4 Surface1 = new(0.102f, 0.122f, 0.145f, 1.00f);
@@ -91,6 +99,7 @@ internal static class AdtStyling
     {
         var scale = ImGuiHelpers.GlobalScale;
         var style = ImRaii.PushStyle(ImGuiStyleVar.WindowRounding, WindowRounding * scale)
+            .Push(ImGuiStyleVar.WindowBorderSize, 1f)
             .Push(ImGuiStyleVar.ChildRounding, CardRounding * scale)
             .Push(ImGuiStyleVar.ChildBorderSize, 0f)
             .Push(ImGuiStyleVar.FrameRounding, FrameRounding * scale)
