@@ -30,6 +30,7 @@ public sealed partial class Plugin : IDalamudPlugin
     private readonly WindowSystem windowSystem = new("AutoMarket");
     private readonly MainWindow mainWindow;
     private readonly M3PreviewWindow m3PreviewWindow;
+    private readonly AdtPreviewWindow adtPreviewWindow;
 
     /// <summary>
     /// AllaganTools' own InventoryCategory enum values for the player's bags/saddlebags and their
@@ -50,10 +51,13 @@ public sealed partial class Plugin : IDalamudPlugin
         lifestreamCommand = PluginInterface.GetIpcSubscriber<string, object>("Lifestream.ExecuteCommand");
         allaganToolsItemCount = PluginInterface.GetIpcSubscriber<uint, bool, uint[], bool, uint>("AllaganTools.ItemCountOwnedByCategory");
         RebornMaterial.M3.Initialize(PluginInterface);
+        Windows.Adt.AdtFonts.Initialize(PluginInterface.UiBuilder);
         mainWindow = new MainWindow(this);
         windowSystem.AddWindow(mainWindow);
         m3PreviewWindow = new M3PreviewWindow(this);
         windowSystem.AddWindow(m3PreviewWindow);
+        adtPreviewWindow = new AdtPreviewWindow(this);
+        windowSystem.AddWindow(adtPreviewWindow);
 
         var command = new CommandInfo(OnCommand) { HelpMessage = "Open AutoMarket. Optionally pass an item name." };
         CommandManager.AddHandler(CommandName, command);
@@ -158,7 +162,9 @@ public sealed partial class Plugin : IDalamudPlugin
         windowSystem.RemoveAllWindows();
         mainWindow.Dispose();
         m3PreviewWindow.Dispose();
+        adtPreviewWindow.Dispose();
         RebornMaterial.M3.Dispose();
+        Windows.Adt.AdtFonts.Dispose();
         MarketClient.Dispose();
     }
 
@@ -168,4 +174,7 @@ public sealed partial class Plugin : IDalamudPlugin
 
     /// <summary>Toggles the RebornMaterial dashboard-card prototype window (see M3PreviewWindow).</summary>
     internal void ToggleM3Preview() => m3PreviewWindow.IsOpen = !m3PreviewWindow.IsOpen;
+
+    /// <summary>Toggles the ported-Auto-Daily-Tribes dashboard-card prototype window (see AdtPreviewWindow).</summary>
+    internal void ToggleAdtPreview() => adtPreviewWindow.IsOpen = !adtPreviewWindow.IsOpen;
 }

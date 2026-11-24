@@ -52,6 +52,9 @@ public sealed partial class MainWindow
         const float m3ButtonSize = 26f;
         var m3X = chevronX - 6f - m3ButtonSize;
         DrawHeaderButton(m3X, pos.Y + midY - m3ButtonSize / 2f, m3ButtonSize, "M3", () => plugin.ToggleM3Preview());
+        const float adtButtonSize = 30f;
+        var adtX = m3X - 6f - adtButtonSize;
+        DrawHeaderButton(adtX, pos.Y + midY - adtButtonSize / 2f, adtButtonSize, "ADT", () => plugin.ToggleAdtPreview());
         DrawHeaderButton(chevronX, pos.Y + midY - buttonSize / 2f, buttonSize, headerCollapsed ? "v" : "^", () => headerCollapsed = !headerCollapsed);
         DrawHeaderButton(closeX, pos.Y + midY - buttonSize / 2f, buttonSize, "x", () => IsOpen = false);
 
