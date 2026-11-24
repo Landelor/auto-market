@@ -9,6 +9,19 @@ namespace AutoMarket.Windows;
 
 public sealed partial class MainWindow
 {
+    /// <summary>
+    /// Dashboard tab: dependency status up top, the live route card (progress ring, phase chip,
+    /// 4-step tracker, stat tiles) when a route is running or finished, and the shopping
+    /// cart/grouped route with the "Start grouped purchase route" button at the bottom - the
+    /// three things worth checking while a route is active, split out of the old single scroll.
+    /// </summary>
+    private void DrawDashboardTab()
+    {
+        var dependenciesReady = DrawDependencyStatus();
+        DrawRouteCard();
+        DrawCart(dependenciesReady);
+    }
+
     private static readonly string[] RouteSteps = ["Travel", "Search", "Verify", "Buy"];
 
     /// <summary>

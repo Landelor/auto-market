@@ -9,6 +9,68 @@ namespace AutoMarket.Windows;
 
 public sealed partial class MainWindow
 {
+    /// <summary>
+    /// Search tab: look up a single item, tune quality/quantity/budget filters, run a
+    /// Universalis search, and act on individual listings - ADT-style section split out of the
+    /// old single scrolling view so this tab holds only the one-item-at-a-time workflow.
+    /// </summary>
+    private void DrawSearchTab()
+    {
+        var dependenciesReady = plugin.GetPluginState("Lifestream").Loaded;
+
+        ImGui.Text("Item");
+        ImGui.SetNextItemWidth(-1);
+        if (ImGui.InputText("##AutoMarketItem", ref searchText, 128))
+        {
+            searchCancellation?.Cancel();
+            selectedItem = null;
+            listings.Clear();
+            RefreshMatches();
+        }
+
+        ItemChoice? chosenItem = null;
+        foreach (var match in matches)
+        {
+            if (ImGui.Selectable($"{match.Name}##{match.Id}"))
+            {
+                chosenItem = match;
+                break;
+            }
+        }
+
+        if (chosenItem is { } chosen)
+        {
+            selectedItem = chosen;
+            searchText = chosen.Name;
+            matches.Clear();
+            listings.Clear();
+            status = $"Selected {chosen.Name}.";
+        }
+
+        DrawSearchOptions();
+
+        if (selectedItem is { } item && searchTask is null && ImGui.Button("Search all listings"))
+            StartSearch(item);
+
+        if (searchTask is not null)
+            ImGui.Text("Checking Universalis...");
+
+        ImGui.Separator();
+        ImGui.TextWrapped(status);
+
+        var visibleListings = listings.Where(MatchesQuality).ToList();
+        if (listings.Count > 0)
+        {
+            ImGui.Text($"Showing {visibleListings.Count:N0} of {listings.Count:N0} listings, cheapest first.");
+            if (selectedItem is { } selected && ImGui.Button("Add optimized plan to list"))
+                AddToCart(selected, visibleListings);
+            ImGui.SameLine();
+            ImGui.TextDisabled("Cart purchases whole stacks and may exceed the target on the final stack.");
+            ImGui.TextDisabled("Updated: green = verified live in your own client; gray/amber/red = how old the Universalis report is.");
+            DrawListings(visibleListings, dependenciesReady);
+        }
+    }
+
     private void DrawSearchOptions()
     {
         var region = plugin.CurrentRegion;

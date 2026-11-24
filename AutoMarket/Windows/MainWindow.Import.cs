@@ -24,15 +24,16 @@ public sealed partial class MainWindow
 
     private bool ImportBuildRunning => importBuildIndex >= 0 && importBuildIndex < importBuildQueue.Count;
 
-    private void DrawImport()
+    /// <summary>
+    /// Import tab: paste an Artisan ingredient export, parse/match it against marketable items,
+    /// and queue optimized plans for everything matched - its own dedicated section now, so this
+    /// no longer needs the old collapsing-header gate that hid it inside the single scroll view.
+    /// </summary>
+    private void DrawImportTab()
     {
-        ImGui.Separator();
-        if (!ImGui.CollapsingHeader("Import list from Artisan"))
-            return;
-
         ImGui.TextWrapped("Paste an Artisan ingredient export (lines like \"40x Dense Aluminum Ore\"), then parse it to match items before queuing a route.");
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextMultiline("##AutoMarketImportText", ref importText, 8192, new Vector2(-1, 120));
+        ImGui.InputTextMultiline("##AutoMarketImportText", ref importText, 8192, new Vector2(-1, 160));
 
         if (ImGui.Button("Parse list"))
             ParseImportText();

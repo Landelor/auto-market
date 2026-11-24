@@ -20,6 +20,13 @@ public sealed partial class MainWindow : Window, IDisposable
         Nq,
     }
 
+    private enum MainTab
+    {
+        Dashboard,
+        Search,
+        Import,
+    }
+
     private readonly record struct ItemChoice(uint Id, string Name);
 
     private readonly Plugin plugin;
@@ -41,6 +48,7 @@ public sealed partial class MainWindow : Window, IDisposable
     private int maxBudget;
     private int nextCartId = 1;
     private bool headerCollapsed;
+    private MainTab activeTab = MainTab.Dashboard;
     private IDisposable? chrome;
     private Vector2? manualSize;
 
@@ -205,6 +213,10 @@ public sealed partial class MainWindow : Window, IDisposable
     /// (ADT's Layout.ContentRightInset does the same, at 6px) - a child window that reaches all
     /// the way to the physical edge takes mouse-hover priority over its parent there, which was
     /// silently swallowing clicks on the native resize-drag corner right underneath it.
+    ///
+    /// The body is further split into a narrow left icon rail (ADT-style section tabs: Dashboard/
+    /// Search/Import) and the active tab's content, so a single window no longer has to scroll
+    /// through all three workflows stacked on top of each other.
     /// </summary>
     private void DrawContent()
     {
@@ -217,7 +229,7 @@ public sealed partial class MainWindow : Window, IDisposable
         var scale = Dalamud.Interface.Utility.ImGuiHelpers.GlobalScale;
         // ImGui's native resize-drag hit-test runs on whichever window is topmost under the
         // mouse; a child window always wins that over its own parent for the pixels it covers,
-        // *regardless of what's drawn there* - so the body child must leave a real uncovered
+        // *regardless of what's drawn there* - so the body region must leave a real uncovered
         // strip along the window's own right/bottom edges, not just a cosmetically-sized gap.
         // ADT's AppWindow.cs gets this for free structurally (a 6px content-right-inset plus
         // its always-present bottom dock bar), so its resize-grip hint sits over genuinely bare
@@ -225,8 +237,24 @@ public sealed partial class MainWindow : Window, IDisposable
         // (~18-22px at default font sizes) with margin for AutoMarket's larger custom fonts.
         var bodyInset = 28f * scale;
         var bodySize = ImGui.GetContentRegionAvail() - new Vector2(bodyInset, bodyInset);
+
+        const float railWidth = 64f;
+        const float railGap = 8f;
+        var rail = railWidth * scale;
+        var gap = railGap * scale;
+
+        using (ImRaii.PushStyle(ImGuiStyleVar.WindowPadding, new Vector2(8f, 14f) * scale))
+        using (var nav = ImRaii.Child("##am_nav", new Vector2(rail, bodySize.Y), false))
+        {
+            if (nav)
+                DrawNavRail();
+        }
+
+        ImGui.SameLine(0, gap);
+
+        var contentSize = new Vector2(Math.Max(1f, bodySize.X - rail - gap), bodySize.Y);
         using (ImRaii.PushStyle(ImGuiStyleVar.WindowPadding, new Vector2(16f, 12f) * scale))
-        using (var body = ImRaii.Child("##am_body", bodySize, false, ImGuiWindowFlags.AlwaysUseWindowPadding))
+        using (var body = ImRaii.Child("##am_body", contentSize, false, ImGuiWindowFlags.AlwaysUseWindowPadding))
         {
             if (body)
                 DrawBodyContent();
@@ -235,63 +263,18 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private void DrawBodyContent()
     {
-        var dependenciesReady = DrawDependencyStatus();
-
-        ImGui.Text("Item");
-        ImGui.SetNextItemWidth(-1);
-        if (ImGui.InputText("##AutoMarketItem", ref searchText, 128))
+        switch (activeTab)
         {
-            searchCancellation?.Cancel();
-            selectedItem = null;
-            listings.Clear();
-            RefreshMatches();
-        }
-
-        ItemChoice? chosenItem = null;
-        foreach (var match in matches)
-        {
-            if (ImGui.Selectable($"{match.Name}##{match.Id}"))
-            {
-                chosenItem = match;
+            case MainTab.Dashboard:
+                DrawDashboardTab();
                 break;
-            }
+            case MainTab.Search:
+                DrawSearchTab();
+                break;
+            case MainTab.Import:
+                DrawImportTab();
+                break;
         }
-
-        if (chosenItem is { } chosen)
-        {
-            selectedItem = chosen;
-            searchText = chosen.Name;
-            matches.Clear();
-            listings.Clear();
-            status = $"Selected {chosen.Name}.";
-        }
-
-        DrawSearchOptions();
-
-        if (selectedItem is { } item && searchTask is null && ImGui.Button("Search all listings"))
-            StartSearch(item);
-
-        if (searchTask is not null)
-            ImGui.Text("Checking Universalis...");
-
-        ImGui.Separator();
-        ImGui.TextWrapped(status);
-        DrawRouteCard();
-
-        var visibleListings = listings.Where(MatchesQuality).ToList();
-        if (listings.Count > 0)
-        {
-            ImGui.Text($"Showing {visibleListings.Count:N0} of {listings.Count:N0} listings, cheapest first.");
-            if (selectedItem is { } selected && ImGui.Button("Add optimized plan to list"))
-                AddToCart(selected, visibleListings);
-            ImGui.SameLine();
-            ImGui.TextDisabled("Cart purchases whole stacks and may exceed the target on the final stack.");
-            ImGui.TextDisabled("Updated: green = verified live in your own client; gray/amber/red = how old the Universalis report is.");
-            DrawListings(visibleListings, dependenciesReady);
-        }
-
-        DrawImport();
-        DrawCart(dependenciesReady);
     }
 
     private bool DrawDependencyStatus()
