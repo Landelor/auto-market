@@ -40,6 +40,7 @@ public sealed partial class MainWindow : Window, IDisposable
     private int maxBudget;
     private int nextCartId = 1;
     private bool headerCollapsed;
+    private IDisposable? chrome;
 
     public MainWindow(Plugin plugin) : base("AutoMarket###AutoMarketMain")
     {
@@ -91,6 +92,7 @@ public sealed partial class MainWindow : Window, IDisposable
     public override void PreDraw()
     {
         base.PreDraw();
+        Flags &= ~ImGuiWindowFlags.NoResize;
         if (headerCollapsed)
         {
             // Matches DrawHeaderBar's actual (DPI-scaled) height + the gap it leaves below itself,
@@ -106,11 +108,23 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             SizeConstraints = expandedConstraints;
         }
+
+        // Dalamud calls PreDraw() before ImGui.Begin() paints the window's background/border, and
+        // Draw() only runs after Begin() - so pushing chrome inside Draw() (the previous bug) is
+        // too late to affect that background/border; ADT itself pushes in PreDraw/PostDraw for
+        // exactly this reason (see AutoDailyTribes' Windows/Shell/AppWindow.cs).
+        chrome = Adt.AdtStyling.PushChrome();
+    }
+
+    public override void PostDraw()
+    {
+        chrome?.Dispose();
+        chrome = null;
+        base.PostDraw();
     }
 
     public override void Draw()
     {
-        using var chrome = Adt.AdtStyling.PushChrome();
         DrawContent();
         if (!headerCollapsed)
             DrawResizeGripHint();

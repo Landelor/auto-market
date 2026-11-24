@@ -102,22 +102,48 @@ internal static class AdtStyling
             .Push(ImGuiStyleVar.WindowBorderSize, 1f)
             .Push(ImGuiStyleVar.ChildRounding, CardRounding * scale)
             .Push(ImGuiStyleVar.ChildBorderSize, 0f)
+            .Push(ImGuiStyleVar.PopupRounding, CardRounding * scale)
+            .Push(ImGuiStyleVar.PopupBorderSize, 1f)
             .Push(ImGuiStyleVar.FrameRounding, FrameRounding * scale)
             .Push(ImGuiStyleVar.FramePadding, new Vector2(10f, 6f) * scale)
-            .Push(ImGuiStyleVar.ItemSpacing, new Vector2(10f, 8f) * scale);
+            .Push(ImGuiStyleVar.FrameBorderSize, 0f)
+            .Push(ImGuiStyleVar.ItemSpacing, new Vector2(10f, 8f) * scale)
+            .Push(ImGuiStyleVar.ItemInnerSpacing, new Vector2(6f, 4f) * scale)
+            .Push(ImGuiStyleVar.ScrollbarSize, 9f * scale)
+            .Push(ImGuiStyleVar.ScrollbarRounding, 9f * scale)
+            .Push(ImGuiStyleVar.GrabRounding, 6f * scale)
+            .Push(ImGuiStyleVar.GrabMinSize, 12f * scale);
 
         var color = ImRaii.PushColor(ImGuiCol.WindowBg, WindowBg)
             .Push(ImGuiCol.ChildBg, Vector4.Zero)
+            .Push(ImGuiCol.PopupBg, WithAlpha(Surface1, 0.985f))
             .Push(ImGuiCol.Border, new Vector4(1f, 1f, 1f, 0.09f))
+            .Push(ImGuiCol.BorderShadow, Vector4.Zero)
             .Push(ImGuiCol.FrameBg, SliderBg)
             .Push(ImGuiCol.FrameBgHovered, Surface2)
             .Push(ImGuiCol.FrameBgActive, Surface3)
+            .Push(ImGuiCol.ScrollbarBg, Vector4.Zero)
+            .Push(ImGuiCol.ScrollbarGrab, new Vector4(1f, 1f, 1f, 0.12f))
+            .Push(ImGuiCol.ScrollbarGrabHovered, new Vector4(1f, 1f, 1f, 0.20f))
+            .Push(ImGuiCol.ScrollbarGrabActive, new Vector4(1f, 1f, 1f, 0.28f))
             .Push(ImGuiCol.Button, Surface1)
             .Push(ImGuiCol.ButtonHovered, Surface2)
             .Push(ImGuiCol.ButtonActive, Tint(Surface2, AccentTeal, 0.35f))
+            .Push(ImGuiCol.Header, Tint(Surface1, AccentTeal, 0.30f))
+            .Push(ImGuiCol.HeaderHovered, Surface2)
+            .Push(ImGuiCol.HeaderActive, Tint(Surface2, AccentTeal, 0.40f))
+            .Push(ImGuiCol.CheckMark, AccentTealSoft)
+            .Push(ImGuiCol.SliderGrab, AccentTeal)
+            .Push(ImGuiCol.SliderGrabActive, AccentTealSoft)
             .Push(ImGuiCol.Text, TextStrong)
             .Push(ImGuiCol.TextDisabled, TextMuted)
-            .Push(ImGuiCol.Separator, Hairline);
+            .Push(ImGuiCol.Separator, Hairline)
+            // Hidden: AutoMarket draws its own corner resize-grip hint (MainWindow.DrawResizeGripHint)
+            // so the native triangle - unthemed grey by default - never shows through underneath it.
+            .Push(ImGuiCol.ResizeGrip, Vector4.Zero)
+            .Push(ImGuiCol.ResizeGripHovered, Vector4.Zero)
+            .Push(ImGuiCol.ResizeGripActive, Vector4.Zero)
+            .Push(ImGuiCol.TextSelectedBg, WithAlpha(AccentTeal, 0.35f));
 
         return new ChromeScope(style, color);
     }
