@@ -101,15 +101,8 @@ public sealed partial class MainWindow : Window, IDisposable
 
     public override void Draw()
     {
-        Theme.Push();
-        try
-        {
-            DrawContent();
-        }
-        finally
-        {
-            Theme.Pop();
-        }
+        using var chrome = Adt.AdtStyling.PushChrome();
+        DrawContent();
     }
 
     private void DrawContent()
@@ -200,11 +193,11 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         var (color, text) = state switch
         {
-            { Loaded: true } => (Theme.Green, "loaded"),
-            { Installed: true } => (Theme.Amber, "installed, disabled"),
-            _ when required => (Theme.Rose, "missing, required"),
-            _ => (Theme.Muted, "not installed, optional"),
+            { Loaded: true } => (Adt.AdtStyling.AccentMint, "loaded"),
+            { Installed: true } => (Adt.AdtStyling.AccentAmber, "installed, disabled"),
+            _ when required => (Adt.AdtStyling.AccentRose, "missing, required"),
+            _ => (Adt.AdtStyling.TextMuted, "not installed, optional"),
         };
-        Theme.Pill($"{name}: {text}", color);
+        Adt.AdtChip.Draw($"{name}: {text}", color);
     }
 }

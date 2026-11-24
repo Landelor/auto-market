@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using AutoMarket.Windows.Adt;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 
 namespace AutoMarket.Windows;
 
@@ -114,7 +116,7 @@ public sealed partial class MainWindow
         else
         {
             var totalGil = cart.SelectMany(order => order.PlannedQuotes).Sum(quote => quote.Total);
-            if (Theme.ActionBar("START GROUPED PURCHASE ROUTE", $"{cart.Count:N0} items \u00b7 {totalGil:N0} gil", Theme.Teal))
+            if (AdtHeroButton.Draw(FontAwesomeIcon.Play, "Start grouped purchase route", $"{cart.Count:N0} items \u00b7 {totalGil:N0} gil", AdtStyling.AccentTeal, true))
             {
                 var error = plugin.StartCart(cart);
                 status = error ?? $"Started a {cart.SelectMany(order => order.PlannedQuotes).Select(quote => quote.World).Distinct(StringComparer.OrdinalIgnoreCase).Count():N0}-world route.";

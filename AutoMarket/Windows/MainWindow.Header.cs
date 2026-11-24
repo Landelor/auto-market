@@ -1,81 +1,80 @@
-using System;
 using System.Linq;
 using System.Numerics;
+using AutoMarket.Windows.Adt;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 
 namespace AutoMarket.Windows;
 
 public sealed partial class MainWindow
 {
     /// <summary>
-    /// A custom title bar (the native ImGui title bar can't host a colored pill or avatar dot) that
-    /// mirrors Auto Daily Tribes' look: icon dot, title, a status pill, a one-line summary, then a
-    /// collapse chevron and a close button. Collapsing hides everything below it and shrinks the
-    /// window to just this bar - so the summary line IS what you see when "minimized", same as
-    /// Auto Daily Tribes.
+    /// Custom title bar built on the ported Auto Daily Tribes system (see Windows/Adt/*): a glass
+    /// strip, a pulsing status dot + pill (same drawing style as ADT's own HeaderBar
+    /// DrawStatusPill), a one-line summary, then real hover-animated icon buttons for
+    /// collapse/close instead of the old plain glyph-in-a-box. Collapsing hides everything below
+    /// it and shrinks the window to just this bar, so the summary line IS the "minimized" view -
+    /// same as Auto Daily Tribes.
     /// </summary>
     private void DrawHeaderBar()
     {
-        const float height = 34f;
+        var scale = ImGuiHelpers.GlobalScale;
+        var height = 36f * scale;
         var avail = ImGui.GetContentRegionAvail().X;
         var pos = ImGui.GetCursorScreenPos();
         var draw = ImGui.GetWindowDrawList();
 
-        draw.AddRectFilled(pos, pos + new Vector2(avail, height), ImGui.ColorConvertFloat4ToU32(Theme.Panel), 10f, ImDrawFlags.RoundCornersTop);
+        AdtPaint.Fill(draw, pos, pos + new Vector2(avail, height), AdtStyling.WithAlpha(AdtStyling.Surface1, 0.55f),
+            AdtStyling.WindowRounding * scale, ImDrawFlags.RoundCornersTop);
+        AdtPaint.Hairline(draw, new Vector2(pos.X, pos.Y + height - 0.5f), new Vector2(pos.X + avail, pos.Y + height - 0.5f));
 
         var (statusWord, statusColor, summary) = BuildHeaderSummary();
-        var x = pos.X + 12f;
-        const float midY = height / 2f;
+        var x = pos.X + 14f * scale;
+        var midY = pos.Y + height / 2f;
 
-        draw.AddCircleFilled(new Vector2(x + 4, pos.Y + midY), 4f, ImGui.ColorConvertFloat4ToU32(statusColor));
-        x += 16f;
+        var dotColor = statusWord == "RUNNING"
+            ? AdtStyling.PulseColor(statusColor, AdtStyling.Lighten(statusColor, 0.3f), AdtStyling.PulseMedium)
+            : statusColor;
+        AdtPaint.Dot(draw, new Vector2(x + 4f * scale, midY), 4f * scale, dotColor);
+        x += 16f * scale;
 
         const string title = "Auto Market";
-        var titleSize = ImGui.CalcTextSize(title);
-        draw.AddText(new Vector2(x, pos.Y + midY - titleSize.Y / 2f), ImGui.ColorConvertFloat4ToU32(Theme.Text), title);
-        x += titleSize.X + 10f;
+        using (AdtFonts.PushHeadline())
+        {
+            var titleSize = AdtTextDraw.Measure(title);
+            AdtTextDraw.At(title, new Vector2(x, midY - titleSize.Y / 2f), AdtStyling.TextStrong);
+            x += titleSize.X + 10f * scale;
+        }
 
-        var pillPad = new Vector2(9, 3);
-        var pillTextSize = ImGui.CalcTextSize(statusWord);
-        var pillSize = pillTextSize + pillPad * 2;
-        var pillPos = new Vector2(x, pos.Y + midY - pillSize.Y / 2f);
-        draw.AddRectFilled(pillPos, pillPos + pillSize, ImGui.ColorConvertFloat4ToU32(statusColor with { W = 0.2f }), pillSize.Y / 2f);
-        draw.AddText(pillPos + pillPad, ImGui.ColorConvertFloat4ToU32(statusColor), statusWord);
-        x += pillSize.X + 10f;
+        var cursorBefore = ImGui.GetCursorScreenPos();
+        ImGui.SetCursorScreenPos(new Vector2(x, midY - 10f * scale));
+        AdtChip.Draw(statusWord, statusColor);
+        var pillEnd = ImGui.GetItemRectMax().X;
+        ImGui.SetCursorScreenPos(cursorBefore);
+        x = pillEnd + 10f * scale;
 
-        var summarySize = ImGui.CalcTextSize(summary);
-        draw.AddText(new Vector2(x, pos.Y + midY - summarySize.Y / 2f), ImGui.ColorConvertFloat4ToU32(Theme.Muted), summary);
+        var buttonSize = 26f * scale;
+        var closeX = pos.X + avail - 10f * scale - buttonSize;
+        var chevronX = closeX - 4f * scale - buttonSize;
 
-        const float buttonSize = 20f;
-        var closeX = pos.X + avail - 10f - buttonSize;
-        var chevronX = closeX - 6f - buttonSize;
-        const float m3ButtonSize = 26f;
-        var m3X = chevronX - 6f - m3ButtonSize;
-        DrawHeaderButton(m3X, pos.Y + midY - m3ButtonSize / 2f, m3ButtonSize, "M3", () => plugin.ToggleM3Preview());
-        const float adtButtonSize = 30f;
-        var adtX = m3X - 6f - adtButtonSize;
-        DrawHeaderButton(adtX, pos.Y + midY - adtButtonSize / 2f, adtButtonSize, "ADT", () => plugin.ToggleAdtPreview());
-        DrawHeaderButton(chevronX, pos.Y + midY - buttonSize / 2f, buttonSize, headerCollapsed ? "v" : "^", () => headerCollapsed = !headerCollapsed);
-        DrawHeaderButton(closeX, pos.Y + midY - buttonSize / 2f, buttonSize, "x", () => IsOpen = false);
+        using (AdtFonts.PushCaption())
+        {
+            var summarySize = AdtTextDraw.Measure(summary);
+            var maxX = chevronX - 10f * scale;
+            AdtTextDraw.At(AdtTextDraw.Truncate(summary, maxX - x), new Vector2(x, midY - summarySize.Y / 2f), AdtStyling.TextDim);
+        }
 
-        ImGui.SetCursorScreenPos(new Vector2(pos.X, pos.Y + height + 8f));
-    }
+        ImGui.SetCursorScreenPos(new Vector2(chevronX, midY - buttonSize / 2f));
+        if (AdtIconButton.Draw(headerCollapsed ? FontAwesomeIcon.ChevronDown : FontAwesomeIcon.ChevronUp,
+                "##am_header_collapse", buttonSize, tooltip: headerCollapsed ? "Restore" : "Minimize"))
+            headerCollapsed = !headerCollapsed;
 
-    private static void DrawHeaderButton(float x, float y, float size, string glyph, Action onClick)
-    {
-        var pos = new Vector2(x, y);
-        ImGui.SetCursorScreenPos(pos);
-        var clicked = ImGui.InvisibleButton($"##automarket-header-{glyph}-{x}", new Vector2(size, size));
-        var hovered = ImGui.IsItemHovered();
-        var draw = ImGui.GetWindowDrawList();
-        if (hovered)
-            draw.AddRectFilled(pos, pos + new Vector2(size, size), ImGui.ColorConvertFloat4ToU32(Theme.Card), 5f);
+        ImGui.SetCursorScreenPos(new Vector2(closeX, midY - buttonSize / 2f));
+        if (AdtIconButton.Draw(FontAwesomeIcon.Times, "##am_header_close", buttonSize, tooltip: "Close"))
+            IsOpen = false;
 
-        var glyphSize = ImGui.CalcTextSize(glyph);
-        draw.AddText(pos + (new Vector2(size, size) - glyphSize) / 2f, ImGui.ColorConvertFloat4ToU32(Theme.Muted), glyph);
-
-        if (clicked)
-            onClick();
+        ImGui.SetCursorScreenPos(new Vector2(pos.X, pos.Y + height + 8f * scale));
     }
 
     /// <summary>
@@ -85,20 +84,20 @@ public sealed partial class MainWindow
     private (string Word, Vector4 Color, string Summary) BuildHeaderSummary()
     {
         if (!plugin.GetPluginState("Lifestream").Loaded)
-            return ("SETUP NEEDED", Theme.Rose, "Lifestream is required but not loaded");
+            return ("SETUP NEEDED", AdtStyling.AccentRose, "Lifestream is required but not loaded");
 
         if (plugin.IsPurchasePending)
-            return ("RUNNING", Theme.Teal, $"{plugin.QueueCompleted}/{plugin.QueueTotal} stacks \u00b7 {plugin.RouteSpent:N0} gil \u00b7 {plugin.ProgressStage}");
+            return ("RUNNING", AdtStyling.AccentTeal, $"{plugin.QueueCompleted}/{plugin.QueueTotal} stacks \u00b7 {plugin.RouteSpent:N0} gil \u00b7 {plugin.ProgressStage}");
 
         if (plugin.QueueTotal > 0)
-            return ("FINISHED", Theme.Teal2, $"{plugin.QueueCompleted}/{plugin.QueueTotal} stacks \u00b7 {plugin.RouteSpent:N0} gil spent");
+            return ("FINISHED", AdtStyling.AccentMint, $"{plugin.QueueCompleted}/{plugin.QueueTotal} stacks \u00b7 {plugin.RouteSpent:N0} gil spent");
 
         if (cart.Count > 0)
         {
             var totalGil = cart.SelectMany(order => order.PlannedQuotes).Sum(quote => quote.Total);
-            return ("READY", Theme.Teal, $"{cart.Count:N0} items queued \u00b7 {totalGil:N0} gil estimated");
+            return ("READY", AdtStyling.AccentTeal, $"{cart.Count:N0} items queued \u00b7 {totalGil:N0} gil estimated");
         }
 
-        return ("IDLE", Theme.Muted, "Cart is empty");
+        return ("IDLE", AdtStyling.TextMuted, "Cart is empty");
     }
 }

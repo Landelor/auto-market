@@ -38,6 +38,8 @@ internal static class AdtMotion
         return next;
     }
 
+    public static float Hover(int key, bool hovered) => Approach(key, hovered ? 1f : 0f, 18f);
+
     public static ImRaii.StyleDisposable PushAlpha(float progress)
         => ImRaii.PushStyle(ImGuiStyleVar.Alpha, MathF.Max(0.001f, progress * ImGui.GetStyle().Alpha));
 
