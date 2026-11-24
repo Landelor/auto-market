@@ -95,11 +95,12 @@ internal static class AdtStyling
             ImGui.TextUnformatted(label);
     }
 
-    public static IDisposable PushChrome()
+    public static IDisposable PushChrome(Vector2 windowPadding)
     {
         var scale = ImGuiHelpers.GlobalScale;
         var style = ImRaii.PushStyle(ImGuiStyleVar.WindowRounding, WindowRounding * scale)
-            .Push(ImGuiStyleVar.WindowBorderSize, 1f)
+            .Push(ImGuiStyleVar.WindowBorderSize, 0f)
+            .Push(ImGuiStyleVar.WindowPadding, windowPadding * scale)
             .Push(ImGuiStyleVar.ChildRounding, CardRounding * scale)
             .Push(ImGuiStyleVar.ChildBorderSize, 0f)
             .Push(ImGuiStyleVar.PopupRounding, CardRounding * scale)
@@ -117,7 +118,7 @@ internal static class AdtStyling
         var color = ImRaii.PushColor(ImGuiCol.WindowBg, WindowBg)
             .Push(ImGuiCol.ChildBg, Vector4.Zero)
             .Push(ImGuiCol.PopupBg, WithAlpha(Surface1, 0.985f))
-            .Push(ImGuiCol.Border, new Vector4(1f, 1f, 1f, 0.09f))
+            .Push(ImGuiCol.Border, Vector4.Zero)
             .Push(ImGuiCol.BorderShadow, Vector4.Zero)
             .Push(ImGuiCol.FrameBg, SliderBg)
             .Push(ImGuiCol.FrameBgHovered, Surface2)

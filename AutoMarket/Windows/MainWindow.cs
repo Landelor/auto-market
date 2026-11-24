@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Lumina.Excel.Sheets;
 
@@ -45,7 +46,7 @@ public sealed partial class MainWindow : Window, IDisposable
     public MainWindow(Plugin plugin) : base("AutoMarket###AutoMarketMain")
     {
         this.plugin = plugin;
-        Flags |= ImGuiWindowFlags.NoTitleBar;
+        Flags |= ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
         expandedConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(800, 620),
@@ -112,8 +113,11 @@ public sealed partial class MainWindow : Window, IDisposable
         // Dalamud calls PreDraw() before ImGui.Begin() paints the window's background/border, and
         // Draw() only runs after Begin() - so pushing chrome inside Draw() (the previous bug) is
         // too late to affect that background/border; ADT itself pushes in PreDraw/PostDraw for
-        // exactly this reason (see AutoDailyTribes' Windows/Shell/AppWindow.cs).
-        chrome = Adt.AdtStyling.PushChrome();
+        // exactly this reason (see AutoDailyTribes' Windows/Shell/AppWindow.cs). Zero window
+        // padding, same as ADT's own PushChrome(Vector2.Zero) call, so the header can draw flush
+        // to every edge instead of sitting in a padding gap that let the game show through at the
+        // corners; the body below gets its own padding via a child region (see DrawContent).
+        chrome = Adt.AdtStyling.PushChrome(Vector2.Zero);
     }
 
     public override void PostDraw()
@@ -131,27 +135,37 @@ public sealed partial class MainWindow : Window, IDisposable
     }
 
     /// <summary>
-    /// A purely visual corner hint (ADT's AppWindow.cs DrawResizeGrip) so the window's built-in
-    /// drag-to-resize border - otherwise an invisible, undiscoverable hitbox - has an affordance.
+    /// A visual corner hint (ADT's AppWindow.cs DrawResizeGrip) so the window's built-in
+    /// drag-to-resize corner - otherwise undiscoverable with no visible border - has an
+    /// affordance. Must be called against the outer window (after any child Begin/End has
+    /// returned), since it reads the *current* window's position/size/draw list.
     /// </summary>
     private static void DrawResizeGripHint()
     {
         var scale = Dalamud.Interface.Utility.ImGuiHelpers.GlobalScale;
-        const float gripSize = 12f;
-        const float inset = 4f;
+        const float gripSize = 14f;
+        const float inset = 5f;
         var grip = gripSize * scale;
         var padding = inset * scale;
         var corner = ImGui.GetWindowPos() + ImGui.GetWindowSize() - new Vector2(padding, padding);
         var hovered = ImGui.IsMouseHoveringRect(corner - new Vector2(grip + padding, grip + padding), corner);
-        var color = ImGui.GetColorU32(Adt.AdtStyling.WithAlpha(Adt.AdtStyling.TextStrong, hovered ? 0.38f : 0.14f));
+        var color = ImGui.GetColorU32(Adt.AdtStyling.WithAlpha(Adt.AdtStyling.AccentTeal, hovered ? 0.85f : 0.45f));
         var dl = ImGui.GetWindowDrawList();
         for (var line = 1; line <= 3; line++)
         {
             var offset = line * grip / 3f;
-            dl.AddLine(corner - new Vector2(offset, 0f), corner - new Vector2(0f, offset), color, 1.4f * scale);
+            dl.AddLine(corner - new Vector2(offset, 0f), corner - new Vector2(0f, offset), color, 1.6f * scale);
         }
     }
 
+    /// <summary>
+    /// Everything below the header, in its own child region - exactly ADT's structure (header
+    /// drawn flush to the window edges with zero window padding, body in a separately-padded
+    /// child). This is what makes the body's scrollbar start right under the header instead of
+    /// running the full window height behind it, show only when content actually overflows (the
+    /// child's own native scrollbar), and gives body content breathing room despite the window
+    /// itself having zero padding.
+    /// </summary>
     private void DrawContent()
     {
         FinishSearch();
@@ -160,6 +174,17 @@ public sealed partial class MainWindow : Window, IDisposable
         if (headerCollapsed)
             return;
 
+        var scale = Dalamud.Interface.Utility.ImGuiHelpers.GlobalScale;
+        using (ImRaii.PushStyle(ImGuiStyleVar.WindowPadding, new Vector2(16f, 12f) * scale))
+        using (var body = ImRaii.Child("##am_body", ImGui.GetContentRegionAvail(), false, ImGuiWindowFlags.AlwaysUseWindowPadding))
+        {
+            if (body)
+                DrawBodyContent();
+        }
+    }
+
+    private void DrawBodyContent()
+    {
         var dependenciesReady = DrawDependencyStatus();
 
         ImGui.Text("Item");
