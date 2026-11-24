@@ -48,6 +48,7 @@ public sealed partial class MainWindow : Window, IDisposable
     private int maxBudget;
     private int nextCartId = 1;
     private bool headerCollapsed;
+    private bool resizeLocked;
     private MainTab activeTab = MainTab.Dashboard;
     private IDisposable? chrome;
     private Vector2? manualSize;
@@ -121,7 +122,19 @@ public sealed partial class MainWindow : Window, IDisposable
         else
         {
             SizeConstraints = expandedConstraints;
-            if (manualSize is { } wanted)
+            if (resizeLocked && manualSize is { } locked)
+            {
+                // Locking freezes the window at whatever size it was when the player clicked the
+                // lock icon (captured onto `manualSize` there, see DrawHeaderButtons) by pinning
+                // both the min and max constraint to it and continuing to force Size every frame -
+                // the same ImGuiCond.Always mechanism the free-resize path already uses, just
+                // with nowhere left for the user (or the resize grip, which is hidden while
+                // locked) to push it.
+                SizeConstraints = new WindowSizeConstraints { MinimumSize = locked, MaximumSize = locked };
+                Size = locked;
+                SizeCondition = ImGuiCond.Always;
+            }
+            else if (manualSize is { } wanted)
             {
                 // Native border/corner resize-drag turned out to be unreliable here across three
                 // separate fixes (chrome timing, padding, child insets) - most likely some other
@@ -155,7 +168,7 @@ public sealed partial class MainWindow : Window, IDisposable
     public override void Draw()
     {
         DrawContent();
-        if (!headerCollapsed)
+        if (!headerCollapsed && !resizeLocked)
             DrawResizeGrip();
     }
 

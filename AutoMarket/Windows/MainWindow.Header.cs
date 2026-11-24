@@ -39,7 +39,7 @@ public sealed partial class MainWindow
         AdtPaint.Hairline(draw, new Vector2(pos.X, pos.Y + height - 0.5f), new Vector2(pos.X + avail, pos.Y + height - 0.5f));
 
         var midY = pos.Y + height * 0.5f;
-        var buttonsWidth = HeaderButtonSize * 2f * scale + HeaderButtonGap * scale;
+        var buttonsWidth = HeaderButtonSize * 3f * scale + HeaderButtonGap * 2f * scale;
         var buttonsLeft = pos.X + avail - padX - buttonsWidth;
         var x = pos.X + padX;
 
@@ -84,6 +84,19 @@ public sealed partial class MainWindow
         if (AdtIconButton.Draw(headerCollapsed ? FontAwesomeIcon.ChevronDown : FontAwesomeIcon.ChevronUp,
                 "##am_header_collapse", buttonSize, tooltip: headerCollapsed ? "Restore" : "Minimize"))
             headerCollapsed = !headerCollapsed;
+
+        // Lock/unlock sits to the left of minimize, same row, same size - not a separate strip.
+        // Locking freezes the window at whatever size it is right now (captured onto manualSize
+        // if the player never dragged the resize grip yet) and hides that grip until unlocked;
+        // see the resizeLocked branch in PreDraw() for how that size gets pinned every frame.
+        ImGui.SetCursorScreenPos(new Vector2(topRight.X - padX - buttonSize - stride * 2f, top));
+        if (AdtIconButton.Draw(resizeLocked ? FontAwesomeIcon.Lock : FontAwesomeIcon.LockOpen,
+                "##am_header_resize_lock", buttonSize, tooltip: resizeLocked ? "Unlock resizing" : "Lock resizing"))
+        {
+            resizeLocked = !resizeLocked;
+            if (resizeLocked)
+                manualSize ??= ImGui.GetWindowSize() / ImGuiHelpers.GlobalScale;
+        }
     }
 
     /// <summary>
