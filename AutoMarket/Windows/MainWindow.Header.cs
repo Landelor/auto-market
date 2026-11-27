@@ -96,6 +96,7 @@ public sealed partial class MainWindow
             resizeLocked = !resizeLocked;
             if (resizeLocked)
                 manualSize ??= ImGui.GetWindowSize() / ImGuiHelpers.GlobalScale;
+            SaveWindowSettings();
         }
     }
 

@@ -63,6 +63,7 @@ public sealed partial class MainWindow : Window, IDisposable
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
         };
         SizeConstraints = expandedConstraints;
+        LoadWindowSettings();
 
         foreach (var item in Plugin.DataManager.GetExcelSheet<Item>())
         {
